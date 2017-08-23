@@ -1,6 +1,8 @@
 import React from 'react';
 
 function connectWs(component) {
+  var map = new Map();
+
     let wsUrl = "ws://localhost:8081/wss";
 
     console.log("connecting to ws: ", wsUrl);
@@ -14,6 +16,8 @@ function connectWs(component) {
           console.log("Graph Id: ", graphId);
           ws.send('{"command": "subscribe","graph_id" : "' + graphId + '"}');
           component.setState({graphs : event.data + component.state.graphs});
+        } else {
+          component.setState({events : event.data + component.state.events});
         }
     };
 }
@@ -21,7 +25,10 @@ function connectWs(component) {
 class ConnectionComponent extends React.Component {
   constructor(props) {
       super(props);
-      this.state = {graphs : ""};
+      this.state = {
+        graphs : "",
+        events : ""
+      };
     }
 
     componentDidMount() {
@@ -31,7 +38,8 @@ class ConnectionComponent extends React.Component {
     render() {
       return (
         <div>
-          Graphs : <strong>{this.state.graphs}</strong>
+          <p>Graphs : <strong>{this.state.graphs}</strong></p>
+        <p>Events : <strong>{this.state.events}</strong></p>
       </div>
       );
     }
