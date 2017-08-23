@@ -21,9 +21,15 @@ const options = {
 
 class App extends React.Component {
 
+  constructor(props){
+    super(props);
+    this.state = {
+      graph: ''
+    };
+  }
+
   handleData(data) {
-    let result = JSON.parse(data);
-    console.log(data);
+    this.setState({graph: this.state.graph + data});
   }
   handleOpen() {
     alert("connected");
@@ -35,15 +41,12 @@ class App extends React.Component {
   render () {
   return (
     <div>
+      Graphs: <strong>{this.state.graph}</strong>
+
       <Websocket url='ws://localhost:8081/wss' onMessage={this.handleData.bind(this)}
         onOpen={this.handleOpen} onClose={this.handleClose}
         reconnect={true} debug={true}/>
     </div>
-
-    // <div>
-    //   <p> Hello React!</p>
-    //   <Timeline options={options}/>
-    // </div>
   );
   }
 }
