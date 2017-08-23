@@ -25,6 +25,7 @@
     "react": "^15.6.1",
     "react-dom": "^15.6.1",
     "react-visjs-timeline": "^1.3.4",
+    "react-websocket": "^1.1.7",
     "vis": "^4.20.1"
   },
   "repository": {

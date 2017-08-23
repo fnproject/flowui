@@ -1,7 +1,8 @@
 require('file-loader?name=[name].[ext]!./index.html');
 import React from 'react';
+import Websocket from 'react-websocket';
 import {render} from 'react-dom';
-import Timeline from 'react-visjs-timeline'
+import Timeline from 'react-visjs-timeline';
 const options = {
     width: '100%',
     height: '60px',
@@ -20,13 +21,29 @@ const options = {
 
 class App extends React.Component {
 
+  handleData(data) {
+    let result = JSON.parse(data);
+    console.log(data);
+  }
+  handleOpen() {
+    alert("connected");
+  }
+  handleClose() {
+    alert("disconnected");
+  }
 
   render () {
   return (
     <div>
-      <p> Hello React!</p>
-      <Timeline options={options}/>
+      <Websocket url='ws://localhost:8081/wss' onMessage={this.handleData.bind(this)}
+        onOpen={this.handleOpen} onClose={this.handleClose}
+        reconnect={true} debug={true}/>
     </div>
+
+    // <div>
+    //   <p> Hello React!</p>
+    //   <Timeline options={options}/>
+    // </div>
   );
   }
 }
