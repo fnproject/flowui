@@ -1,5 +1,5 @@
 var graphsActive = [];
-var graphPlusEvents = {};
+var graphPlusEvents = new Map();
 
 var Controller = class Controller {
 
@@ -8,10 +8,7 @@ var Controller = class Controller {
     eventObject.type = data['type'];
     eventObject.ts = ((data['data'])['ts']);
 
-    var currentEvents = graphPlusEvents[id];
-    var updatedEvents = currentEvents.push(eventObject);
-
-    graphPlusEvents[id] = updatedEvents;
+    graphPlusEvents.get(id).push(eventObject);
   }
 
   manageEvents(data) {
@@ -21,7 +18,8 @@ var Controller = class Controller {
       case 'model.GraphCreatedEvent':
         graphId = (data['data'])['graphId'];
         this.graphActivated(graphId);
-        graphPlusEvents[graphId] = this.createEvents(data, graphId);
+        graphPlusEvents.set(graphId, []);
+        this.createEvents(data, graphId)
         break;
       case 'model.GraphCompletedEvent':
         graphId = (data['data'])['graphId'];
@@ -36,7 +34,6 @@ var Controller = class Controller {
   }
 
   graphActivated(subId){
-    graphPlusEvents[subId] = [];
     if(graphsActive.indexOf(subId) === -1){
       graphsActive.push(subId);
     }
@@ -54,6 +51,7 @@ var Controller = class Controller {
   }
 
   getGraphsWithEvents() {
+    console.log(graphPlusEvents);
     return graphPlusEvents;
   }
 }
