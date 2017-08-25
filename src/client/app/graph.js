@@ -1,3 +1,8 @@
+function alterTimeStamp(ts){
+  var date = new Date(ts);
+  return(date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds());
+}
+
 var Graph = class Graph {
   constructor(graphId, allEvents){
     this.graphId = graphId;
@@ -10,9 +15,16 @@ var Graph = class Graph {
     for (var i = 0; i < eventNumber; i++){
       var eventObject = this.allEvents[i];
       var timeStamp = eventObject['ts'];
-      items.push({id: i, start: timeStamp});
+      var type = eventObject['type'];
+      items.push({
+        id: i,
+        start: timeStamp,
+        group: this.graphId,
+        title: alterTimeStamp(timeStamp),
+        className: this.graphId,
+        content: type
+      });
     }
-    console.log(items);
     return items;
   }
 

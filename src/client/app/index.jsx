@@ -44,10 +44,8 @@ function respondToMessage(data, ws, component) {
 
   var graph = new Graph(id, component.state.eventsOfGraphs.get(id));
   var items = graph.createDataSet();
-  console.log(items);
   var index = component.state.activeGraphs.indexOf(id);
   timelines.set(index, items);
-  console.log(timelines.get(0));
 }
 
 function connectWs(component) {
@@ -81,15 +79,23 @@ class App extends React.Component {
     connectWs(this);
   }
 
+// Please note this currently only works for the first graph you create
   render () {
   return (
     <div>
       <Timeline
         options={{}}
         items={timelines.get(0)}
+        clickHandler={this.clickHandler.bind(this)}
         />
     </div>
   );
+  }
+
+  clickHandler(props) {
+    if(props['item'] !== null){
+      //Do something cool
+    }
   }
 }
 
