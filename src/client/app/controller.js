@@ -5,6 +5,11 @@ var graphPlusEvents = new Map();
 var graphStages = new Map();
 var timelines = new Map();
 
+function returnEndTime(time) {
+  var t = new Date(time);
+  return t.setSeconds(t.getSeconds() + 5);
+}
+
 var Controller = class Controller {
 
   createEvent(data, id, stage, end){
@@ -35,7 +40,7 @@ var Controller = class Controller {
   manageEvents(data) {
     let id = null;
     let stage = null;
-    let end = null;
+    let end = returnEndTime(((data['data'])['ts']));
 
     switch (data['type']) {
       case 'model.GraphCreatedEvent':
@@ -52,6 +57,7 @@ var Controller = class Controller {
       default:
         id = data['sub'];
         stage = (data['data'])['stageId'];
+        end = null;
         break;
     }
     var eventObject = this.createEvent(data, id, stage, end);

@@ -19,13 +19,17 @@ function createDataSet(){
     var timeStamp = eventObject['ts'];
     var type = eventObject['type'];
     var end = eventObject['end'];
+    var stage = eventObject['stage'];
+    if (stage === null){
+      stage = this.graphId;
+    }
     if (end !== null) {
       finish = end;
     }
     items.push({
       id: i,
       start: timeStamp,
-      group: this.graphId,
+      group: stage,
       title: alterTimeStamp(timeStamp),
       className: this.graphId,
       content: type,
