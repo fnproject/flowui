@@ -1,5 +1,8 @@
+import Graph from './graph.js';
+
 var graphsActive = [];
 var graphPlusEvents = new Map();
+var timelines = new Map();
 
 var Controller = class Controller {
 
@@ -12,25 +15,33 @@ var Controller = class Controller {
   }
 
   manageEvents(data) {
-    let graphId = null;
+    let id = null;
 
     switch (data['type']) {
       case 'model.GraphCreatedEvent':
-        graphId = (data['data'])['graphId'];
-        this.graphActivated(graphId);
-        graphPlusEvents.set(graphId, []);
-        this.createEvents(data, graphId)
+        id = (data['data'])['graphId'];
+        this.graphActivated(id);
+        graphPlusEvents.set(id, []);
+        this.createEvents(data, id)
         break;
       case 'model.GraphCompletedEvent':
-        graphId = (data['data'])['graphId'];
-        this.graphTerminated(graphId);
-        this.createEvents(data, graphId)
+        id = (data['data'])['graphId'];
+        this.graphTerminated(id);
+        this.createEvents(data, id)
         break;
+      case 'model.GraphCommittedEvent':
+        id = (data['data'])['graphId'];
+        this.createEvents(data, id);
       default:
-        const subId = data['sub'];
-        this.createEvents(data, subId);
+        id = data['sub'];
+        this.createEvents(data, id);
         break;
     }
+    var graph = new Graph(id, graphPlusEvents.get(id));
+    graph.createDataSet();
+    console.log(graph);
+    var index = graphsActive.indexOf(id);
+    timelines.set(index, graph);
   }
 
   graphActivated(subId){
@@ -53,6 +64,10 @@ var Controller = class Controller {
   getGraphsWithEvents() {
     // console.log(graphPlusEvents);
     return graphPlusEvents;
+  }
+
+  getTimelines() {
+    return timelines;
   }
 }
 
