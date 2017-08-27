@@ -14,9 +14,14 @@ function createDataSet(){
   const items = [];
   var eventNumber = this.allEvents.length;
   for (var i = 0; i < eventNumber; i++){
+    var finish = Date.now();
     var eventObject = this.allEvents[i];
     var timeStamp = eventObject['ts'];
     var type = eventObject['type'];
+    var end = eventObject['end'];
+    if (end !== null) {
+      finish = end;
+    }
     items.push({
       id: i,
       start: timeStamp,
@@ -24,7 +29,7 @@ function createDataSet(){
       title: alterTimeStamp(timeStamp),
       className: this.graphId,
       content: type,
-      end: Date.now()
+      end: finish
     });
   }
   this.dataSet = items;

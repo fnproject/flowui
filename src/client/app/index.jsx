@@ -19,6 +19,7 @@ function connectWs(component) {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
       component.controller.manageEvents(data);
+      console.log(data);
 
       component.setState({activeGraphs : component.controller.getActiveGraphs()});
       component.setState({eventsOfGraphs : component.controller.getGraphsWithEvents()});
@@ -38,7 +39,7 @@ function getItems(id, component) {
   return [];
 }
 
-// TODO: Make a request to fix currentTimeTick
+// TODO: Sort currentTimeTickHandler
 function update(id, component){
   console.log('updating...');
   var graph = component.state.timelines.get(id);

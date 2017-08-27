@@ -2,44 +2,66 @@ import Graph from './graph.js';
 
 var graphsActive = [];
 var graphPlusEvents = new Map();
+var graphStages = new Map();
 var timelines = new Map();
 
 var Controller = class Controller {
 
-  createEvents(data, id){
+  createEvent(data, id, stage, end){
     var eventObject = new Object();
     eventObject.type = data['type'];
     eventObject.ts = ((data['data'])['ts']);
+    eventObject.stage = stage;
+    eventObject.end = end;
 
-    graphPlusEvents.get(id).push(eventObject);
+    return eventObject;
+  }
+
+  manageStages(data, stage, id) {
+    var index = graphsActive.indexOf(id);
+    if (data['type'] === 'model.StageCompletedEvent') {
+      var graph = timelines.get(index);
+      var events = graph.allEvents;
+      for (var i=0; i<events.length; i++) {
+        var eventObject = events[i];
+        if (eventObject['stage'] === stage){
+          eventObject['end'] = ((data['data'])['ts']);
+        }
+      }
+      graph.createDataSet();
+    }
   }
 
   manageEvents(data) {
     let id = null;
+    let stage = null;
+    let end = null;
 
     switch (data['type']) {
       case 'model.GraphCreatedEvent':
         id = (data['data'])['graphId'];
         this.graphActivated(id);
         graphPlusEvents.set(id, []);
-        this.createEvents(data, id)
         break;
       case 'model.GraphCompletedEvent':
         id = (data['data'])['graphId'];
         this.graphTerminated(id);
-        this.createEvents(data, id)
         break;
       case 'model.GraphCommittedEvent':
         id = (data['data'])['graphId'];
-        this.createEvents(data, id);
       default:
         id = data['sub'];
-        this.createEvents(data, id);
+        stage = (data['data'])['stageId'];
         break;
     }
+    var eventObject = this.createEvent(data, id, stage, end);
+    graphPlusEvents.get(id).push(eventObject);
+
     var graph = new Graph(id, graphPlusEvents.get(id));
     graph.createDataSet();
-    console.log(graph);
+
+    this.manageStages(data, stage, id);
+
     var index = graphsActive.indexOf(id);
     timelines.set(index, graph);
   }
