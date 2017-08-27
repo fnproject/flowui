@@ -22,10 +22,8 @@ var Controller = class Controller {
     return eventObject;
   }
 
-  manageStages(data, stage, id) {
-    var index = graphsActive.indexOf(id);
+  manageStages(data, stage, graph) {
     if (data['type'] === 'model.StageCompletedEvent') {
-      var graph = timelines.get(index);
       var events = graph.allEvents;
       for (var i=0; i<events.length; i++) {
         var eventObject = events[i];
@@ -66,7 +64,7 @@ var Controller = class Controller {
     var graph = new Graph(id, graphPlusEvents.get(id));
     graph.createDataSet();
 
-    this.manageStages(data, stage, id);
+    this.manageStages(data, stage, graph);
 
     var index = graphsActive.indexOf(id);
     timelines.set(index, graph);
@@ -90,7 +88,6 @@ var Controller = class Controller {
   }
 
   getGraphsWithEvents() {
-    // console.log(graphPlusEvents);
     return graphPlusEvents;
   }
 
