@@ -51,7 +51,7 @@ var Controller = class Controller {
   }
 
   getGraphsWithEvents() {
-    console.log(graphPlusEvents);
+    // console.log(graphPlusEvents);
     return graphPlusEvents;
   }
 }

@@ -4,22 +4,6 @@ import {render} from 'react-dom';
 import Timeline from 'react-visjs-timeline';
 import Controller from './controller.js';
 import Graph from './graph.js';
-const options = {
-    width: '100%',
-    height: '60px',
-    stack: false,
-    showMajorLabels: true,
-    showCurrentTime: true,
-    zoomMin: 1000000,
-    type: 'background',
-    format: {
-        minorLabels: {
-            second: 's',
-            minute: 'h:mma',
-            hour: 'ha'
-        }
-    }
-}
 
 var timelines = new Map();
 
@@ -37,15 +21,19 @@ function respondToMessage(data, ws, component) {
     case 'model.GraphCompletedEvent':
       id = (data['data'])['graphId'];
       break;
+    case 'model.GraphCommittedEvent':
+      id = (data['data'])['graphId'];
+      break;
     default:
       id = data['sub'];
       break;
   }
 
   var graph = new Graph(id, component.state.eventsOfGraphs.get(id));
-  var items = graph.createDataSet();
+  graph.createDataSet();
+  console.log(graph);
   var index = component.state.activeGraphs.indexOf(id);
-  timelines.set(index, items);
+  timelines.set(index, graph);
 }
 
 function connectWs(component) {
@@ -65,6 +53,23 @@ function connectWs(component) {
     };
 }
 
+function getItems(id) {
+  var graph = timelines.get(id);
+  if (graph instanceof Graph){
+    return graph['dataSet'];
+  }
+  return [];
+}
+
+// TODO: Make a request to fix currentTimeTick
+function update(id){
+  console.log('updating...');
+  var graph = timelines.get(id);
+  if (graph instanceof Graph){
+    graph.createDataSet();
+  }
+}
+
 class App extends React.Component {
   constructor(props) {
     super(props);
@@ -81,12 +86,14 @@ class App extends React.Component {
 
 // Please note this currently only works for the first graph you create
   render () {
+    var items = getItems(0);
   return (
     <div>
       <Timeline
         options={{}}
-        items={timelines.get(0)}
+        items={items}
         clickHandler={this.clickHandler.bind(this)}
+        currentTimeTickHandler={update(0)}
         />
     </div>
   );
