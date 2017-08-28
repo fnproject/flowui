@@ -1,9 +1,9 @@
 {
-  "name": "react-hello-world",
+  "name": "completerui",
   "version": "1.0.0",
   "main": "server.js",
   "scripts": {
-    "run": "./node_modules/.bin/webpack-dev-server",
+    "run": "./node_modules/.bin/webpack-dev-server --port 1979",
     "build": "./node_modules/.bin/webpack"
   },
   "author": "",
