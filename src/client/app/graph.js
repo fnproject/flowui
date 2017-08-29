@@ -72,7 +72,8 @@ class Graph {
                     {
                         stageId: stageId,
                         created: startTs,
-                        title: evtData.op
+                        title: evtData.op,
+                        dependencies: evtData.dependencies
                     });
             }
                 break;
@@ -102,7 +103,7 @@ class Graph {
     }
 
     getNodes() {
-        return this.stageMap.values();
+        return Array.from(this.stageMap.values());
     }
 
 

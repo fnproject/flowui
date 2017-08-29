@@ -5,7 +5,6 @@ class CompleterWsClient {
         this.receiver = receiver;
 
         let wsUrl = "ws://localhost:8081/wss";
-
         console.log("connecting to ws: ", wsUrl);
 
         this.ws =   new WebSocket(wsUrl);
@@ -20,6 +19,5 @@ class CompleterWsClient {
         this.ws.send(JSON.stringify(cmd));
     }
 }
-
 
 export default CompleterWsClient;

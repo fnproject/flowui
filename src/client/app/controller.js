@@ -1,5 +1,6 @@
 import Graph from './graph.js';
-import CompleterWsClient from "./completerclient";
+//import CompleterWsClient from "./completerclient";
+import MockCompleterClient from "./mockcompleterclient";
 
 
 class Controller {
@@ -7,7 +8,7 @@ class Controller {
     constructor(onChanged) {
         this.knownGraphs = new Set();
         this.activeGraphs = new Map();
-        this.client = new CompleterWsClient(this.receiveEvent)
+        this.client = new MockCompleterClient((e)=>{this.receiveEvent(e);})
         this.onChanged = onChanged;
     }
 
@@ -21,7 +22,7 @@ class Controller {
             case '_all':
                 switch (event.type) {
                     case 'model.GraphCreatedEvent':
-                        this.knownGraphs.push(event.data.graphId);
+                        this.knownGraphs.add(event.data.graphId);
                         break;
                 }
                 break;
