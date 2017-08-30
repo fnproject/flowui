@@ -47,7 +47,12 @@
 }
 
 .node.pending {
-    background-color: lightcoral;
+    background-image: url('./stripe_pending.png');
+    background-position: 0px 0px;
+    background-repeat: repeat;
+}
+
+.node.running {
     background-image: url('./stripe_run.png');
     background-position: 0px 0px;
     background-repeat: repeat;

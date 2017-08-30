@@ -55,7 +55,7 @@ class GraphTimeline extends React.Component {
                 case 'successful':
                     styleExtra = styles.successful;
                     break;
-                case 'runnning':
+                case 'running':
                     styleExtra = styles.running;
                     break;
                 case 'pending':

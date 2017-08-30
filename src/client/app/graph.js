@@ -39,7 +39,7 @@ class Graph {
                         op: evtData.op,
                         dependencies: evtData.dependencies
                     });
-            }
+            }break;
             case 'model.DelayScheduledEvent':
             case 'model.FaasInvocationStartedEvent':
             {
@@ -51,7 +51,7 @@ class Graph {
                     console.log(`Unrecognized stage id ${stage_id}`)
                     return;
                 }
-                state : 'running',
+                stage.state= 'running';
                 stage.started = startTs;
             }
                 break;
