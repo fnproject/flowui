@@ -10,8 +10,10 @@ class GraphTimeline extends React.Component {
             onNodeSelected: props.onNodeSelected,
             graph: props.graph,
             selectedNode: null,
+            relativeTimestamp:Date.now()
         };
         this.selectNode = this.selectNode.bind(this);
+        setInterval(()=>{this.state.relativeTimestamp = Date.now(); this.setState(this.state)},50);
     }
 
     componentDidMount() {
@@ -25,6 +27,7 @@ class GraphTimeline extends React.Component {
     }
 
     render() {
+        let completedTime = null;
         let nodes = this.state.graph.getNodes();
 
 
@@ -45,6 +48,7 @@ class GraphTimeline extends React.Component {
         let nodeElements = nodes.map((node) => {
             let createTs = relativeX(node.created);
             let startTs = relativeX(node.started);
+            let startTime = startTs;
             let duration = relativeX(node.completed) - relativeX(node.started);
 
             var styleExtra = '';
@@ -120,13 +124,22 @@ class GraphTimeline extends React.Component {
             );
         });
 
+        let widthDiff = 700;
+
+        widthDiff = widthDiff - (relativeX(this.state.relativeTimestamp));
+
+        let position = {left: widthDiff + 'px'};
         return (
-            <div>
-                <div className={styles.viewport} style={{position: 'relative', width: "1024px", height: "300px"}}>
-                  
+          <div>
+            <div className={styles.outerView}>
+                <div className={styles.viewport}>
+                  <div className={styles.innerViewport} id="innerViewport" style={position}>
                     {nodeElements}
+                  </div>
                 </div>
             </div>
+              <div>ts:{this.state.relativeTimestamp}</div>
+          </div>
         );
     }
 }

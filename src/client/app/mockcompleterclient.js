@@ -57,11 +57,6 @@ class MockCompleterClient{
 
      sendEvent = sendEvent.bind(this);
      sendEvent();
-    // setTimeout(()=>{
-    //     events.forEach(
-    //       this.receiver
-    //     );
-    // },100);
   }
 }
 
