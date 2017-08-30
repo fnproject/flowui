@@ -1,1 +1,25 @@
+* Time line: live scrolling mode
+    - Quick open new graph (i.e. checkbox - open next graph)
+    - show timeline scrolling from right
+    - pending nodes animated (done?)
+    - pending nodes are flush against right hand boundary (could be done bu
+
+* Time line : add guage at bottom
+* Zoom Line:
+   - Add window overlay
+   - show errors
+   - show times
+* Node info:
+    - Show node details,
+    - Show Code position
+    - Get node logs and show them
+
+
+
+More detail:
+   - Fetch call logs to show Fn start/create times
+
+
+DONE:
+
 * Show active time of events
