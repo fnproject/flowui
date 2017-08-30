@@ -44,6 +44,7 @@ const mockSubscriptionData =
     {"type":"model.StageCompletedEvent","sub":"532925fa-bcec-42fb-8a1c-ef63b511fbd0","data":{"stage_id":"6","result":{"successful":true,"datum":{"empty":{}}},"ts":"2017-08-29T20:00:15.481823813Z"}},
     {"type":"model.GraphCompletedEvent","sub":"532925fa-bcec-42fb-8a1c-ef63b511fbd0","data":{"graph_id":"532925fa-bcec-42fb-8a1c-ef63b511fbd0","function_id":"ct/cloudthreads-example","ts":"2017-08-29T20:00:15.483660985Z"}}]};
 
+
 class MockCompleterClient{
 
   constructor(receiver){
@@ -64,9 +65,45 @@ class MockCompleterClient{
     if (!events){
       return;
     }
-    setTimeout(()=>{
-        events.forEach(this.receiver);
-    },100);
+    let firstEvent = events[0];
+    const firstEventTs= Date.parse(firstEvent.data.ts);
+    let timeStart = Date.now();
+    const dialation = 1.0;
+
+    events.forEach((evt)=>{
+        let ts = Date.parse(evt.data.ts);
+        let newTs = (ts - firstEventTs)* dialation + timeStart;
+        evt.data.ts = new Date(newTs).toISOString();
+    })
+
+     function sendEvent(){
+       while(events.length > 0){
+         var next = events[0];
+         const nowTs = Date.now();
+         const eventTs = Date.parse(next.data.ts);
+
+         if (eventTs<=nowTs){
+           console.log("sending Event", next);
+           this.receiver(events.shift());
+         }else{
+
+            break;
+         }
+       }
+       if(events.length > 0){
+         setTimeout(sendEvent,100);
+       }else{
+         console.log("Send all events ");
+       }
+     }
+
+     sendEvent = sendEvent.bind(this);
+     sendEvent();
+    // setTimeout(()=>{
+    //     events.forEach(
+    //       this.receiver
+    //     );
+    // },100);
   }
 }
 

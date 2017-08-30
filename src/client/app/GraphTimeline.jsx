@@ -5,7 +5,6 @@ import styles from './graphtimeline.css'
 class GraphTimeline extends React.Component {
     constructor(props) {
         super(props);
-        console.log(props);
 
         this.state = {
             onNodeSelected: props.onNodeSelected,
@@ -124,6 +123,7 @@ class GraphTimeline extends React.Component {
         return (
             <div>
                 <div className={styles.viewport} style={{position: 'relative', width: "1024px", height: "300px"}}>
+                  
                     {nodeElements}
                 </div>
             </div>
