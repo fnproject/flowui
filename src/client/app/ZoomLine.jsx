@@ -31,6 +31,13 @@ class ZoomLine extends React.Component {
 
 
         // todo  deal with running nodes
+        if(nodesByStart.length === 0){
+          return (
+            <div>
+              ...
+            </div>
+          )
+        }
         var maxTs = nodesByStart[nodesByStart.length - 1].completed;
         var minTs = this.state.graph.created;
 
