@@ -28,16 +28,24 @@ class ZoomLine extends React.Component {
         let linePoints = [];
 
         const width = 1024;
+        const height  =100;
 
 
         // todo  deal with running nodes
         var maxTs = nodesByStart[nodesByStart.length - 1].completed;
         var minTs = this.state.graph.created;
 
-        let relativeX = function (ts) {
-            return (ts - minTs / ((maxTs - minTs)));
-        };
+        // relative to total view
 
+        // let relativeX = function (ts) {
+        //     return ((ts - minTs) / ((maxTs - minTs))) * width;
+        // };
+
+
+        // relative to current timeline
+        let relativeX = function (timeStamp) {
+            return (timeStamp - minTs) * 0.1;
+        };
 
         nodesByStart.forEach((node) => {
             let ts = node.started;
@@ -56,6 +64,7 @@ class ZoomLine extends React.Component {
             }
             linePoints.push([node.started, running.length]);
         });
+
         running.forEach((rnode) => {
             running.splice(running.indexOf(rnode), 1);
             linePoints.push([rnode.completed, running.length]);
@@ -64,8 +73,9 @@ class ZoomLine extends React.Component {
 
         var maxCount = linePoints.reduce((v,e)=>Math.max(v,e[1]),0);
         let relativeY = function (count) {
-            return count * 20;
+            return count /maxCount * height;
         };
+        linePoints.push([maxTs,0]);
         var lastPoint = [0, 0];
         let elems = [];
 
@@ -75,14 +85,15 @@ class ZoomLine extends React.Component {
                 bottom: 0,
                 height: relativeY(lastPoint[1]) + 'px',
                 left: relativeX(lastPoint[0])+ 'px',
-                width: relativeX(point[0]) - relativeX(lastPoint[1]) + 'px'
+                width: relativeX(point[0]) - relativeX(lastPoint[0]) + 'px'
             };
             elems.push((<div  key={point} className={styles.graphblock} style={estyle}/> ));
             lastPoint = point;
         });
 
+
         console.log(elems);
-        return (<div style={{position: 'relative', width: "1024px", height: "100px", border:"1px solid black"}} className={styles.viewport}>
+        return (<div style={{position: 'relative', width: "1024px", height: height+"px", border:"1px solid black"}} className={styles.viewport}>
             {elems}
         </div>)
     }
