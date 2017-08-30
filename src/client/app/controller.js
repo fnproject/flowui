@@ -6,10 +6,10 @@ import MockCompleterClient from "./mockcompleterclient";
 class Controller {
 
     constructor(onChanged) {
-        this.knownGraphs = new Set();
-        this.activeGraphs = new Map();
+        this.known_graphs = new Set();
+        this.active_graphs = new Map();
         this.client = new MockCompleterClient((e)=>{this.receiveEvent(e);})
-        this.onChanged = onChanged;
+        this.on_changed = onChanged;
     }
 
 
@@ -22,18 +22,18 @@ class Controller {
             case '_all':
                 switch (event.type) {
                     case 'model.GraphCreatedEvent':
-                        this.knownGraphs.add(event.data.graphId);
+                        this.known_graphs.add(event.data.graph_id);
                         break;
                 }
                 break;
             default: {
-                let graphId = event.sub;
+                let graph_id = event.sub;
                 if (event.type === 'model.GraphCreatedEvent') {
                     let graph = new Graph(event);
-                    this.activeGraphs.set(graphId, graph);
+                    this.active_graphs.set(graph_id, graph);
 
                 } else {
-                    let graph = this.activeGraphs.get(graphId)
+                    let graph = this.active_graphs.get(graph_id)
                     if (!graph) {
                         console.log("Got event for unknown graph ${graphId}")
                         return;
@@ -43,15 +43,15 @@ class Controller {
             }
 
         }
-        this.onChanged(this);
+        this.on_changed(this);
     }
 
     getActiveGraphs() {
-        return this.activeGraphs;
+        return this.active_graphs;
     }
 
     getKnownGraphIds() {
-        return this.knownGraphs;
+        return this.known_graphs;
     }
 
 }

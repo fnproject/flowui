@@ -1,0 +1,56 @@
+
+.viewport {
+    border: 1px solid black;
+}
+
+.node{
+    border-radius: 3px;
+    border:1px solid darkcyan;
+    margin:0px;
+    cursor:pointer;
+    white-space: nowrap;
+    padding: 2px 0px 0px 4px;
+    vertical-align: middle;
+    font-size:8pt;
+}
+
+.node.successful {
+    background-color: lightgreen;
+}
+
+.node.failed {
+    background-color: lightcoral;
+}
+
+
+@keyframes animatedBackground {
+    from { background-position: 0 0; }
+    to { background-position: 100% 0; }
+}
+
+
+.createnode {
+    border-left:3px solid gray;
+    z-index: 2
+
+}
+
+.hdepline {
+    height:1px;
+    border-top: 2px dashed gray;
+    z-index: -1;
+}
+
+.node.selected{
+    outline: none;
+    border-color: #9ecaed;
+    box-shadow: 0 0 10px #9ecaed;
+}
+
+.node.pending {
+    background-color: lightcoral;
+    background-image: url('./stripe_run.png');
+    background-position: 0px 0px;
+    background-repeat: repeat;
+    animation: animatedBackground 10s linear infinite;
+}

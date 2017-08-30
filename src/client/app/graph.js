@@ -1,57 +1,19 @@
-function alterTimeStamp(ts) {
-    const date = new Date(ts);
-    return (date.getHours() + ":" + date.getMinutes() + ":" + date.getSeconds());
-}
-
-const testEvents = [
-    {
-        "type": "model.GraphCreatedEvent",
-        "sub": "135ae706-6819-476a-93a9-d18a62e30292",
-        "data": {
-            "graphId": "135ae706-6819-476a-93a9-d18a62e30292",
-            "functionId": "test/fn",
-            "ts": "2017-08-28T13:30:56.817212658Z"
-        }
-    },
-    {
-        "type": "model.StageAddedEvent",
-        "sub": "135ae706-6819-476a-93a9-d18a62e30292",
-        "data": {"stageId": "0", "op": "delay", "ts": "2017-08-28T13:31:31.721281418Z"}
-    },
-    {
-        "type": "model.DelayScheduledEvent",
-        "sub": "135ae706-6819-476a-93a9-d18a62e30292",
-        "data": {"stageId": "0", "timeMs": "1503927091826", "ts": "2017-08-28T13:31:31.726673270Z"}
-    },
-    {
-        "type": "model.StageCompletedEvent",
-        "sub": "135ae706-6819-476a-93a9-d18a62e30292",
-        "data": {
-            "stageId": "0",
-            "result": {"successful": true, "datum": {"empty": {}}},
-            "ts": "2017-08-28T13:31:31.830953594Z"
-        }
-    }];
-
-
 /**
  * Reduce an event into a graph, returns the new graph
  * @param g
  * @param evt
  */
-
-
 class Graph {
     constructor(createdEvent) {
 
-        this.graphId = createdEvent.data.graphId;
+        this.graph_id = createdEvent.data.graph_id;
         this.created = Date.parse(createdEvent.data.ts);
-
-        this.allEvents = [];
-        this.stageMap = new Map();
+        this.main_ended = null;
+        this.all_events = [];
+        this.stage_map = new Map();
     }
 
-    getId(){
+    getId() {
         return this.graphId;
     }
 
@@ -60,50 +22,71 @@ class Graph {
      * @param evt
      */
     receiveEvent(evt) {
-        this.allEvents.push(evt);
+        this.all_events.push(evt);
 
         switch (evt.type) {
             case 'model.StageAddedEvent': {
                 const evtData = evt.data;
-                const stageId = evtData.stageId;
+                const stage_id = evtData.stage_id;
                 const startTs = Date.parse(evtData.ts);
 
-                this.stageMap.set(stageId,
+                this.stage_map.set(stage_id,
                     {
-                        stageId: stageId,
+                        state: 'pending',
+                        stage_id: stage_id,
                         created: startTs,
-                        title: evtData.op,
+                        op: evtData.op,
                         dependencies: evtData.dependencies
                     });
+            }
+            case 'model.DelayScheduledEvent':
+            case 'model.FaasInvocationStartedEvent': {
+                const evtData = evt.data;
+                const stage_id = evtData.stage_id;
+                const startTs = Date.parse(evtData.ts);
+                let stage = this.stage_map.get(stage_id);
+                if (!stage) {
+                    console.log(`Unrecognized stage id ${stage_id}`)
+                    return;
+                }
+                state : 'running',
+                    stage.started = startTs;
             }
                 break;
             case 'model.StageCompletedEvent': {
                 const evtData = evt.data;
-                const stageId = evtData.stageId;
+                const stage_id = evtData.stage_id;
                 const endTs = Date.parse(evtData.ts);
 
-                let stage = this.stageMap.get(stageId);
+                let stage = this.stage_map.get(stage_id);
                 if (!stage) {
-                    console.log("Unrecognized stage id ${stageId}")
+                    console.log(`Unrecognized stage id ${stage_id}`)
                     return;
                 }
 
+                stage.state = evtData.result.successful ? "successful" : "failed";
                 stage.completed = endTs;
+            }
+                break;
+            case 'model.GraphCommittedEvent': {
+                const evtData = evt.data;
+                const endTs = Date.parse(evtData.ts);
+                this.main_ended = endTs;
             }
                 break;
 
             default:
-                console.log("Unrecognised event ${evt}");
+                console.log(`Unrecognised event ${evt}`);
 
         }
     }
 
     getNode(id) {
-        return this.stageMap.get(id);
+        return this.stage_map.get(id);
     }
 
     getNodes() {
-        return Array.from(this.stageMap.values());
+        return Array.from(this.stage_map.values());
     }
 
 
