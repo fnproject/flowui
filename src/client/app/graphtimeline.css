@@ -9,9 +9,9 @@
     margin:0px;
     cursor:pointer;
     white-space: nowrap;
-    padding: 4px 0px 0px 4px;
-    vertical-align: middle;
     font-size:8pt;
+    box-shadow: 3px 3px 3px 0px rgba(0,0,0,0.45);
+
 }
 
 .node.successful {

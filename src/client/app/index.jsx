@@ -3,6 +3,7 @@ import React from 'react';
 import {render} from 'react-dom';
 import Controller from './controller.js';
 import GraphTimeline from './GraphTimeline.jsx';
+import ZoomLine from './ZoomLine.jsx';
 
 class App extends React.Component {
 
@@ -62,6 +63,7 @@ class App extends React.Component {
         return (
             <div>
                 <GraphTimeline graph={graph}  onNodeSelected={this.onNodeSelected}/>
+                <ZoomLine graph={graph}></ZoomLine>
             </div>
         );
     }

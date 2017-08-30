@@ -10,6 +10,8 @@ class Controller {
         this.active_graphs = new Map();
         this.client = new MockCompleterClient((e)=>{this.receiveEvent(e);})
         this.on_changed = onChanged;
+        this.debounce_timeout = null;
+
     }
 
 
@@ -43,9 +45,15 @@ class Controller {
             }
 
         }
-        this.on_changed(this);
+        this.deBounce(()=>this.on_changed(this),100);
     }
 
+    //debounces the number of updates to the runtime down to  a max of 10x per second
+    deBounce(fn,deadline){
+        if(this.debounce_timeout === null){
+            this.debounce_timeout = setTimeout(()=>{ this.debounce_timeout = null; fn()},deadline)
+        }
+    }
     getActiveGraphs() {
         return this.active_graphs;
     }

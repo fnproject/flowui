@@ -1,3 +1,4 @@
+
 /**
  * Reduce an event into a graph, returns the new graph
  * @param g
@@ -32,7 +33,7 @@ class Graph {
 
                 this.stage_map.set(stage_id,
                     {
-                        state: 'pending',
+                        state : 'pending',
                         stage_id: stage_id,
                         created: startTs,
                         op: evtData.op,
@@ -40,7 +41,8 @@ class Graph {
                     });
             }
             case 'model.DelayScheduledEvent':
-            case 'model.FaasInvocationStartedEvent': {
+            case 'model.FaasInvocationStartedEvent':
+            {
                 const evtData = evt.data;
                 const stage_id = evtData.stage_id;
                 const startTs = Date.parse(evtData.ts);
@@ -50,7 +52,7 @@ class Graph {
                     return;
                 }
                 state : 'running',
-                    stage.started = startTs;
+                stage.started = startTs;
             }
                 break;
             case 'model.StageCompletedEvent': {
@@ -64,7 +66,7 @@ class Graph {
                     return;
                 }
 
-                stage.state = evtData.result.successful ? "successful" : "failed";
+                stage.state  = evtData.result.successful?"successful":"failed";
                 stage.completed = endTs;
             }
                 break;

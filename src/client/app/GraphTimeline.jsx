@@ -27,25 +27,19 @@ class GraphTimeline extends React.Component {
 
     render() {
         let nodes = this.state.graph.getNodes();
-        let nodesString = nodes.map((n) => JSON.stringify(n)).join(", ");
-        let maxTs = function (cur, ts) {
-            if (cur === undefined) {
-                return ts;
-            }
-            if (ts > cur) {
-                return ts;
-            }
-        };
+
 
         let minCreateTime = nodes.reduce((v, n) => Math.min(v, n.created), Infinity);
 
         let maxTime = nodes.reduce((v, n) => Math.max(v, n.completed), -Infinity);
 
-        console.log(`graph timelines are ${minCreateTime} -> ${maxTime}`);
+        console.log(`graph timelines are ${this.state.graph.created} ->${minCreateTime} -> ${maxTime}`);
 
+
+        let startTs = this.state.graph.created;
 
         let relativeX = function (timeStamp) {
-            return (timeStamp - minCreateTime) * 0.1;
+            return (timeStamp - startTs) * 0.1;
         };
 
         let idx = 0;
@@ -86,34 +80,33 @@ class GraphTimeline extends React.Component {
             let waitingTime = startTs - createTs;
 
 
-            let waits =[];
+            let waitElem;
 
-            if(waitingTime > 10){
+            if (waitingTime > 10) {
                 let createboxStyle = {
                     position: 'absolute',
                     height: '20px',
                     width: 1,
-                    top: '' + (idx * nodeHeight)  + 'px',
+                    top: '' + (idx * nodeHeight) + 'px',
                     left: createTs
                 };
 
                 let depLineStyle = {
                     position: 'absolute',
                     width: startTs - createTs,
-                    height:'1px',
-                    top: '' + ((idx * nodeHeight) + nodeHeight/2 - 5) + 'px',
+                    height: '1px',
+                    top: '' + ((idx * nodeHeight) + nodeHeight / 2 - 5) + 'px',
                     left: createTs
                 };
-                waits = [(<div className={styles.createnode} style={createboxStyle}>&nbsp;</div>),
-                    (<div className={styles.hdepline} style={depLineStyle}>&nbsp;</div>)];
+                waitElem =(<div><div className={styles.createnode} style={createboxStyle}>&nbsp;</div><div className={styles.hdepline} style={depLineStyle}>&nbsp;</div></div>);
             }
 
 
             idx++;
-            return (<div>
-                    {waits}
+            return (<div key={node.stage_id}>
+                    {waitElem}
                     <div className={styles.node + ' ' + styleExtra}
-                         key={node.stageId}
+
                          style={runboxStyle}
                          onClick={(e) => this.selectNode(node)}> {node.stage_id}:{node.op} {duration.toFixed(0) + 'ms'}</div>
                 </div>
@@ -124,9 +117,6 @@ class GraphTimeline extends React.Component {
             <div>
                 <div className={styles.viewport} style={{position: 'relative', width: "1024px", height: "300px"}}>
                     {nodeElements}
-                </div>
-                <div>
-                    {nodesString}
                 </div>
             </div>
         );
