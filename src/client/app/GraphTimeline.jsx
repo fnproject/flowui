@@ -98,17 +98,25 @@ class GraphTimeline extends React.Component {
                     top: '' + ((idx * nodeHeight) + nodeHeight / 2 - 5) + 'px',
                     left: createTs
                 };
-                waitElem =(<div><div className={styles.createnode} style={createboxStyle}>&nbsp;</div><div className={styles.hdepline} style={depLineStyle}>&nbsp;</div></div>);
+                waitElem =(<div>
+                  <div className={styles.createnode} style={createboxStyle}>&nbsp;</div>
+                <div className={styles.hdepline} style={depLineStyle}>&nbsp;</div>
+                </div>);
             }
 
+            let deps = ""
+            if(node.dependencies.length !== 0){
+              deps = "Dependencies: Stage " + node.dependencies;
+            }
 
             idx++;
             return (<div key={node.stage_id}>
                     {waitElem}
                     <div className={styles.node + ' ' + styleExtra}
-
                          style={runboxStyle}
-                         onClick={(e) => this.selectNode(node)}> {node.stage_id}:{node.op} {duration.toFixed(0) + 'ms'}</div>
+                         onClick={(e) => this.selectNode(node)}
+                         data-tooltip={node.op + ": " + node.state + "\n" + deps}
+                         > {node.stage_id}:{node.op} {duration.toFixed(0) + 'ms'}</div>
                 </div>
             );
         });
