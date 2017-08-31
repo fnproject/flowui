@@ -67,8 +67,30 @@ class GraphTimeline extends React.Component {
             return (timeStamp - startTs) * 0.06;
         };
 
+        let lifeWidth;
+        if (this.state.graph.main_ended !== null){
+          lifeWidth = relativeX(this.state.graph.main_ended);
+        } else {
+          lifeWidth = 1024;
+        }
+        let mainLifeStyle = {
+            position: 'absolute',
+            height: '20px',
+            width: '' + lifeWidth + 'px',
+            top: '0px',
+            left: '0px'
+        };
+
+        console.log("Ended: " + this.state.graph.main_ended);
+
+        let lifeElem = (<div key='0'>
+        <div className={styles.node + ' ' + styles.lifecycle} style={mainLifeStyle}> {this.state.graph.function_id} </div>
+         </div>);
+
         let pendingElems = [];
         let nodeElements =[];
+
+        nodeElements.push(lifeElem);
 
          nodes.forEach((node,idx) => {
             let createTs = relativeX(node.created);
@@ -106,16 +128,16 @@ class GraphTimeline extends React.Component {
               let pendingboxStyle = {
                   position: 'absolute',
                   height:'20px',
-                  top: '' + (idx * nodeHeight) + 'px',
+                  top: '' + ((idx+1) * nodeHeight) + 'px',
               };
-              let pendElem = (<div key={node.stage_id} className={styles.node + ' ' + styleExtra}
+              let pendElem = (<div key={node.stage_id + 1} className={styles.node + ' ' + styleExtra}
                    style={pendingboxStyle}
                    onClick={(e) => this.selectNode(node)}
                    data-tooltip={node.op + ": " + node.state + "\n" + deps}
                    > {node.stage_id}:{node.op} </div>);
               pendingElems.push(pendElem);
               let waitElem = this.createWaitingElem(idx,nodeHeight,createTs,relativeX(this.state.relativeTimestamp) - createTs);
-              nodeElements.push(<div key={node.stage_id}>{waitElem}</div>);
+              nodeElements.push(<div key={node.stage_id + 1}>{waitElem}</div>);
 
             }else{
               let startTs = relativeX(node.started);
@@ -131,10 +153,10 @@ class GraphTimeline extends React.Component {
                   position: 'absolute',
                   height: '20px',
                   width: '' + duration + 'px',
-                  top: '' + (idx * nodeHeight) + 'px',
+                  top: '' + ((idx+1) * nodeHeight) + 'px',
                   left: startTs
               };
-            nodeElements.push (<div key={node.stage_id}>
+            nodeElements.push (<div key={node.stage_id + 1}>
                     {waitElem}
                     <div className={styles.node + ' ' + styleExtra}
                          style={runboxStyle}
@@ -149,21 +171,28 @@ class GraphTimeline extends React.Component {
 
         let widthDiff = 700;
 
-        widthDiff = widthDiff - (relativeX(this.state.relativeTimestamp));
-        let thisStyle = {left: widthDiff + 'px', overflow: 'visible'};
+        let thisStyle;
+
+        if((this.state.graph.finished < this.state.relativeTimestamp) && (this.state.graph.finished !== null)){
+          let timePlus = relativeX(this.state.graph.finished) + 10;
+          widthDiff = widthDiff - timePlus;
+          thisStyle = {left: '0px', width:timePlus + 'px'};
+        } else {
+          widthDiff = widthDiff - (relativeX(this.state.relativeTimestamp));
+          thisStyle = {left: widthDiff, width: '1024px'};
+        }
 
 
         return (
           <div>
             <div className={styles.outerView}>
-                <div className={styles.viewport}>
+                <div className={styles.viewport} style={{overflowX:'scroll'}} >
                   <div className={styles.innerViewport} id="innerViewport" style={thisStyle}>
                     {nodeElements}
                   </div>
                 </div>
                 <div>{pendingElems}</div>
             </div>
-              <div>ts:{new Date(this.state.relativeTimestamp).toISOString()}</div>
           </div>
         );
     }

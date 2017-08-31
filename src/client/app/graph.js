@@ -13,6 +13,7 @@ class Graph {
         this.finished = null;
         this.all_events = [];
         this.stage_map = new Map();
+        this.function_id = createdEvent.data.function_id;
     }
 
     getId() {

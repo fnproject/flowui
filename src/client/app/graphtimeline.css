@@ -15,7 +15,6 @@
 
 .innerViewport {
   position: relative;
-  width: 1024px;
   height: 300px;
 }
 
@@ -76,6 +75,11 @@
     background-repeat: repeat;
     animation: animatedBackground 30s linear infinite;
     width: 1024px;
+}
+
+.node.lifecycle {
+  background-color: lightblue;
+  background-position: 0px 0px;
 }
 
 [data-tooltip] {
