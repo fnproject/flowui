@@ -9,7 +9,7 @@
 .viewport {
     border-right: 3px solid black;
     height: 300px;
-    width: 700px;
+    width: 850px;
     overflow: hidden;
 }
 
@@ -60,20 +60,28 @@
     box-shadow: 0 0 10px #9ecaed;
 }
 
+@keyframes pendingappear {
+    from {opacity: 0;}
+    to {opacity: 1;}
+}
+
 .node.pending {
     position: relative;
-    left: 703px;
+    left: 853px;
     background-image: url('./stripe_pending.png');
     background-position: 0px 0px;
     background-repeat: repeat;
     z-index: 4;
+    margin-left: 5px;
+    animation: pendingappear  300ms ;
+
 }
 
 .node.running {
     background-image: url('./stripe_run.png');
     background-position: 0px 0px;
     background-repeat: repeat;
-    animation: animatedBackground 30s linear infinite;
+    animation: animatedBackground 1s linear infinite;
     width: 1024px;
 }
 

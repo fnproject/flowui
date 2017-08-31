@@ -9,7 +9,7 @@ class MockCompleterClient{
       this.receiver = receiver;
       this.subscriptions = new Set();
       setTimeout(()=>{
-         console.log("sending lifecycle events",mockActiveGraphEvents);
+         // console.log("sending lifecycle events",mockActiveGraphEvents);
           mockActiveGraphEvents.forEach(receiver)
       },100);
   }
@@ -41,7 +41,7 @@ class MockCompleterClient{
          const eventTs = Date.parse(next.data.ts);
 
          if (eventTs<=nowTs){
-           console.log("sending Event", next);
+           // console.log("sending Event", next);
            this.receiver(events.shift());
          }else{
 
@@ -51,7 +51,7 @@ class MockCompleterClient{
        if(events.length > 0){
          setTimeout(sendEvent,100);
        }else{
-         console.log("Send all events ");
+         // console.log("Send all events ");
        }
      }
 

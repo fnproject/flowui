@@ -1,6 +1,7 @@
 import React from 'react';
 
 import styles from './graphtimeline.css'
+import ZoomLine from "./ZoomLine.jsx";
 
 class GraphTimeline extends React.Component {
     constructor(props) {
@@ -9,69 +10,99 @@ class GraphTimeline extends React.Component {
         this.state = {
             onNodeSelected: props.onNodeSelected,
             graph: props.graph,
+            live:  props.live,
             selectedNode: null,
-            relativeTimestamp:Date.now()
+            relativeTimestamp: Date.now(),
+            cursorTs: Date.now(),
+            intervalTimer: -1
         };
         this.selectNode = this.selectNode.bind(this);
-        setInterval(()=>{this.state.relativeTimestamp = Date.now(); this.setState(this.state)},50);
+        this.updateScroll = this.updateScroll.bind(this);
+
+        this.state.graph.On('model.GraphCompletedEvent',(evt)=>{
+            console.log("Graph completed");
+            this.setLive(false);
+        });
     }
 
     componentDidMount() {
-
+        if (this.state.live) {
+            this.setLive(this.state.live)
+        }
     }
+
+    updateScroll() {
+        if (this.state.live) {
+            this.setLive(false);
+        }
+    }
+
+    setLive(live) {
+        this.state.live = live;
+        if (live) {
+            this.state.intervalTimer = setInterval(()=>{
+                this.state.relativeTimestamp = this.state.cursorTs = Date.now();
+                this.setState(this.state);
+            },50);
+        }else{
+            if(this.state.intervalTimer> 0){
+                clearTimeout(this.state.intervalTimer);
+                this.state.intervalTimer = null;
+            }
+        }
+    }
+
 
     selectNode(node) {
         this.state.selectedNode = node;
-        this.setState(this.state);
         this.state.onNodeSelected(this.state.graph, node);
+        this.setLive(false);
     }
 
-    createWaitingElem(idx,nodeHeight,fromTs,duration){
-      let createboxStyle = {
-          position: 'absolute',
-          height: '20px',
-          width: 1,
-          top: '' + (idx * nodeHeight) + 'px',
-          left: fromTs
-      };
+    createWaitingElem(idx, nodeHeight, fromTs, duration) {
+        let createboxStyle = {
+            position: 'absolute',
+            height: '20px',
+            width: 1,
+            top: '' + (idx * nodeHeight) + 'px',
+            left: fromTs
+        };
 
-      let depLineStyle = {
-          position: 'absolute',
-          width: duration + 'px',
-          height: '1px',
-          top: '' + ((idx * nodeHeight) + nodeHeight / 2 - 5) + 'px',
-          left: fromTs
-      };
+        let depLineStyle = {
+            position: 'absolute',
+            width: duration + 'px',
+            height: '1px',
+            top: '' + ((idx * nodeHeight) + nodeHeight / 2 - 5) + 'px',
+            left: fromTs
+        };
 
-      return(<div>
-        <div className={styles.createnode} style={createboxStyle}>&nbsp;</div>
-      <div className={styles.hdepline} style={depLineStyle}>&nbsp;</div>
-      </div>);
+        return (<div>
+            <div className={styles.createnode} style={createboxStyle}>&nbsp;</div>
+            <div className={styles.hdepline} style={depLineStyle}>&nbsp;</div>
+        </div>);
     }
 
     render() {
-        let completedTime = null;
         let nodes = this.state.graph.getNodes();
-
-
         let minCreateTime = nodes.reduce((v, n) => Math.min(v, n.created), Infinity);
 
-        let maxTime = nodes.reduce((v, n) => Math.max(v, n.completed), -Infinity);
-
-        console.log(`graph timelines are ${this.state.graph.created} ->${minCreateTime} -> ${maxTime}`);
+        console.log(`graph timelines are ${this.state.graph.created} ->${minCreateTime}`);
 
 
         let startTs = this.state.graph.created;
+        let pxPerMs = 0.06;
 
+        // converts a timestamp to a relative X in the display viewport
         let relativeX = function (timeStamp) {
-            return (timeStamp - startTs) * 0.06;
+            return (timeStamp - startTs) * pxPerMs;
         };
 
+
         let lifeWidth;
-        if (this.state.graph.main_ended !== null){
-          lifeWidth = relativeX(this.state.graph.main_ended);
+        if (this.state.graph.main_ended !== null) {
+            lifeWidth = relativeX(this.state.graph.main_ended);
         } else {
-          lifeWidth = 1024;
+            lifeWidth = 1024;
         }
         let mainLifeStyle = {
             position: 'absolute',
@@ -84,15 +115,16 @@ class GraphTimeline extends React.Component {
         console.log("Ended: " + this.state.graph.main_ended);
 
         let lifeElem = (<div key='0'>
-        <div className={styles.node + ' ' + styles.lifecycle} style={mainLifeStyle}> {this.state.graph.function_id} </div>
-         </div>);
+            <div className={styles.node + ' ' + styles.lifecycle}
+                 style={mainLifeStyle}> {this.state.graph.function_id} </div>
+        </div>);
 
         let pendingElems = [];
-        let nodeElements =[];
+        let nodeElements = [];
 
         nodeElements.push(lifeElem);
 
-         nodes.forEach((node,idx) => {
+        nodes.forEach((node, idx) => {
             let createTs = relativeX(node.created);
 
             var styleExtra = '';
@@ -117,83 +149,81 @@ class GraphTimeline extends React.Component {
             const nodeHeight = 30;
 
 
-
-
             let deps = ""
-            if(node.dependencies.length !== 0){
-              deps = "Dependencies: Stage " + node.dependencies;
+            if (node.dependencies.length !== 0) {
+                deps = "Dependencies: Stage " + node.dependencies;
             }
 
-            if(node.state === 'pending'){
-              let pendingboxStyle = {
-                  position: 'absolute',
-                  height:'20px',
-                  top: '' + ((idx+1) * nodeHeight) + 'px',
-              };
-              let pendElem = (<div key={node.stage_id + 1} className={styles.node + ' ' + styleExtra}
-                   style={pendingboxStyle}
-                   onClick={(e) => this.selectNode(node)}
-                   data-tooltip={node.op + ": " + node.state + "\n" + deps}
-                   > {node.stage_id}:{node.op} </div>);
-              pendingElems.push(pendElem);
-              let waitElem = this.createWaitingElem(idx,nodeHeight,createTs,relativeX(this.state.relativeTimestamp) - createTs);
-              nodeElements.push(<div key={node.stage_id + 1}>{waitElem}</div>);
+            if (node.state === 'pending') {
+                let pendingboxStyle = {
+                    position: 'absolute',
+                    height: '20px',
+                    top: '' + ((idx + 1) * nodeHeight) + 'px',
+                };
+                let pendElem = (<div key={node.stage_id + 1} className={styles.node + ' ' + styleExtra}
+                                     style={pendingboxStyle}
+                                     onClick={(e) => this.selectNode(node)}
+                                     data-tooltip={node.op + ": " + node.state + "\n" + deps}
+                > {node.stage_id}:{node.op} </div>);
+                pendingElems.push(pendElem);
+                let waitElem = this.createWaitingElem(idx, nodeHeight, createTs, relativeX(this.state.relativeTimestamp) - createTs);
+                nodeElements.push(<div key={node.stage_id + 1}>{waitElem}</div>);
 
-            }else{
-              let startTs = relativeX(node.started);
-              let duration = relativeX(node.completed) - relativeX(node.started);
+            } else {
+                let startTs = relativeX(node.started);
+                let duration = relativeX(node.completed) - relativeX(node.started);
 
-              let waitingTime = startTs - createTs;
-              let waitElem;
-              if (waitingTime > 10) {
-                 waitElem= this.createWaitingElem(idx,nodeHeight,createTs,waitingTime);
-              }
+                let waitingTime = startTs - createTs;
+                let waitElem;
+                if (waitingTime > 10) {
+                    waitElem = this.createWaitingElem(idx, nodeHeight, createTs, waitingTime);
+                }
 
-              let runboxStyle = {
-                  position: 'absolute',
-                  height: '20px',
-                  width: '' + duration + 'px',
-                  top: '' + ((idx+1) * nodeHeight) + 'px',
-                  left: startTs
-              };
-            nodeElements.push (<div key={node.stage_id + 1}>
-                    {waitElem}
-                    <div className={styles.node + ' ' + styleExtra}
-                         style={runboxStyle}
-                         onClick={(e) => this.selectNode(node)}
-                         data-tooltip={node.op + ": " + node.state + "\n" + deps}
-                         > {node.stage_id}:{node.op} {duration?(duration.toFixed(0) + 'ms'):""}</div>
+                let runboxStyle = {
+                    position: 'absolute',
+                    height: '20px',
+                    width: '' + duration + 'px',
+                    top: '' + ((idx + 1) * nodeHeight) + 'px',
+                    left: startTs
+                };
+                nodeElements.push(<div key={node.stage_id + 1}>
+                        {waitElem}
+                        <div className={styles.node + ' ' + styleExtra}
+                             style={runboxStyle}
+                             onClick={(e) => this.selectNode(node)}
+                             data-tooltip={node.op + ": " + node.state + "\n" + deps}
+                        > {node.stage_id}:{node.op} {duration ? (duration.toFixed(0) + 'ms') : ""}</div>
                     </div>
-
-            );
-          }
+                );
+            }
         });
 
-        let widthDiff = 700;
+        let widthDiff = 850;
 
         let thisStyle;
 
-        if((this.state.graph.finished < this.state.relativeTimestamp) && (this.state.graph.finished !== null)){
-          let timePlus = relativeX(this.state.graph.finished) + 10;
-          widthDiff = widthDiff - timePlus;
-          thisStyle = {left: '0px', width:timePlus + 'px'};
+        if ((this.state.graph.finished < this.state.relativeTimestamp) && (this.state.graph.finished !== null)) {
+            let timePlus = relativeX(this.state.graph.finished) + 10;
+            thisStyle = {left: '0px', width: timePlus + 'px'};
         } else {
-          widthDiff = widthDiff - (relativeX(this.state.relativeTimestamp));
-          thisStyle = {left: widthDiff, width: '1024px'};
+            widthDiff = widthDiff - (relativeX(this.state.relativeTimestamp));
+            thisStyle = {left: widthDiff, width: '1024px'};
         }
 
 
         return (
-          <div>
-            <div className={styles.outerView}>
-                <div className={styles.viewport} style={{overflowX:'scroll'}} >
-                  <div className={styles.innerViewport} id="innerViewport" style={thisStyle}>
-                    {nodeElements}
-                  </div>
+            <div>
+                <div className={styles.outerView}>
+                    <div className={styles.viewport} style={{overflowX: 'scroll'}}>
+                        <div className={styles.innerViewport} id="innerViewport" style={thisStyle}>
+                            {nodeElements}
+                        </div>
+                    </div>
+                    <div>{pendingElems}</div>
                 </div>
-                <div>{pendingElems}</div>
+                {/*<ZoomLine graph={this.state.graph} windowDurationMs={1024 / pxPerMs} cursorTs={this.state.cursorTs}*/}
+                          {/*onSelectionChanged={this.updateScroll}/>*/}
             </div>
-          </div>
         );
     }
 }

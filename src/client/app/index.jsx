@@ -9,7 +9,6 @@ class App extends React.Component {
     constructor(props) {
         super(props);
 
-
         this.state = {
             loadOnNew: true,
             currentGraph: null,
@@ -63,8 +62,7 @@ class App extends React.Component {
         console.log(graph);
         return (
             <div>
-                <GraphTimeline graph={graph} onNodeSelected={this.onNodeSelected}/>
-
+                <GraphTimeline live={true} graph={graph} onNodeSelected={this.onNodeSelected}/>
             </div>
         );
     }

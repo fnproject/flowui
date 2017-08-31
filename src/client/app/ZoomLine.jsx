@@ -9,7 +9,8 @@ class ZoomLine extends React.Component {
 
         this.state = {
             currentX: 0,
-            width: 200,
+            windowDurationMs: props.windowDurationMs ,
+            cursorTs: props.cursorTs,
             onSelectionChanged: props.onSelectionChanged,
             graph: props.graph
         };
