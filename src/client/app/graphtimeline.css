@@ -1,27 +1,15 @@
 
 .outerView {
   position: relative;
-  border: 1px solid blue;
+  border: 3px solid black;
   width: 1024px;
   height: 300px;
 }
 
 .viewport {
-    position: relative;
-
-    border: 1px solid black;
+    border-right: 3px solid black;
     height: 300px;
-    width: 850px;
-    overflow: hidden;
-}
-
-.pendingArea {
-    position: absolute;
-    top:0px;
-    left:850px;
-    border: 1px solid black;
-    height: 300px;
-    width: 174px;
+    width: 700px;
     overflow: hidden;
 }
 
@@ -50,7 +38,6 @@
     background-color: lightcoral;
 }
 
-
 @keyframes animatedBackground {
     from { background-position: 0 0; }
     to { background-position: 100% 0; }
@@ -75,9 +62,12 @@
 }
 
 .node.pending {
+    position: relative;
+    left: 703px;
     background-image: url('./stripe_pending.png');
     background-position: 0px 0px;
     background-repeat: repeat;
+    z-index: 4;
 }
 
 .node.running {

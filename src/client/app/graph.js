@@ -10,6 +10,7 @@ class Graph {
         this.graph_id = createdEvent.data.graph_id;
         this.created = Date.parse(createdEvent.data.ts);
         this.main_ended = null;
+        this.finished = null;
         this.all_events = [];
         this.stage_map = new Map();
     }
@@ -76,11 +77,13 @@ class Graph {
                 this.main_ended = endTs;
             }
                 break;
-            case 'model.GraphCompletedEvent': {
+            case 'model.GraphCompletedEvent' : {
                 const evtData = evt.data;
-                this.completed = Date.parse(evtData.ts);
+                const endTs = Date.parse(evtData.ts);
+                this.finished = endTs;
             }
                 break;
+
             default:
                 console.log(`Unrecognised event ${evt}`);
 
