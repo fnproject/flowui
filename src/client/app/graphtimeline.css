@@ -7,9 +7,21 @@
 }
 
 .viewport {
-    border: 3px solid black;
+    position: relative;
+
+    border: 1px solid black;
     height: 300px;
-    width: 700px;
+    width: 850px;
+    overflow: hidden;
+}
+
+.pendingArea {
+    position: absolute;
+    top:0px;
+    left:850px;
+    border: 1px solid black;
+    height: 300px;
+    width: 174px;
     overflow: hidden;
 }
 

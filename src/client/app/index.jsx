@@ -3,30 +3,32 @@ import React from 'react';
 import {render} from 'react-dom';
 import Controller from './controller.js';
 import GraphTimeline from './GraphTimeline.jsx';
-import ZoomLine from './ZoomLine.jsx';
 
 class App extends React.Component {
 
     constructor(props) {
         super(props);
-        let controller = new Controller((c) => {
+
+
+        this.state = {
+            loadOnNew: true,
+            currentGraph: null,
+        };
+        this.state.currentGraph = null;
+        this.state.controller = new Controller((c) => {
             this.state.controller = c;
-            if(!this.state.currentGraph && c.getKnownGraphIds().length > 0 && this.state.loadOnNew){
-                this.onGraphSelected(c.getKnownGraphIds().slice(-1)[0]);
-            }else{
+            if (!this.state.currentGraph && c.getKnownGraphs().length > 0 && this.state.loadOnNew) {
+                this.onGraphSelected(c.getKnownGraphs().slice(-1)[0].data.graph_id);
+            } else {
                 this.setState(this.state);
             }
         });
 
-        this.state = {
-            loadOnNew: true,
-            controller: controller,
-            currentGraph: null,
-        };
         this.onGraphSelected = this.onGraphSelected.bind(this);
         this.renderCurrentGraph = this.renderCurrentGraph.bind(this);
         this.onNodeSelected = this.onNodeSelected.bind(this);
     }
+
 
 
     componentDidMount() {
@@ -45,7 +47,7 @@ class App extends React.Component {
         if (this.state.currentGraph == null) {
             return (
                 <div>
-                    Select a graph
+                    Select a graph or start running.
                 </div>
             );
         }
@@ -61,22 +63,22 @@ class App extends React.Component {
         console.log(graph);
         return (
             <div>
-                <GraphTimeline graph={graph}  onNodeSelected={this.onNodeSelected}/>
-                <ZoomLine graph={graph}></ZoomLine>
+                <GraphTimeline graph={graph} onNodeSelected={this.onNodeSelected}/>
+
             </div>
         );
     }
 
-    onNodeSelected(graph,node){
+    onNodeSelected(graph, node) {
         console.log(`node ${graph.graph_id}: ${node.stage_id} selected`);
     }
 
 // Please note this currently only works for the first graph you create
     render() {
         var graphListItems = [];
-        this.state.controller.getKnownGraphIds().forEach((graphId) => {
-            graphListItems.push(<li key={graphId}><a href="#"
-                                                     onClick={() => this.onGraphSelected(graphId)}>Graph {graphId}</a>
+        this.state.controller.getKnownGraphs().forEach((graph) => {
+            graphListItems.push(<li key={graph.data.graph_id}><a href="#"
+                                                                 onClick={() => this.onGraphSelected(graph.data.graph_id)}>{graph.data.function_id} {graph.data.graph_id}</a>
             </li>);
         });
 

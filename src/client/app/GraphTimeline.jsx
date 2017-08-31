@@ -10,14 +10,34 @@ class GraphTimeline extends React.Component {
             onNodeSelected: props.onNodeSelected,
             graph: props.graph,
             selectedNode: null,
-            relativeTimestamp:Date.now()
+            relativeTimestamp: Date.now()
         };
         this.selectNode = this.selectNode.bind(this);
-        setInterval(()=>{this.state.relativeTimestamp = Date.now(); this.setState(this.state)},50);
+
+
+        this.tick = this.tick.bind(this);
+        this.timer = setInterval(this.tick, 50);
+    }
+
+    tick() {
+        this.state.relativeTimestamp = Date.now();
+        this.setState(this.state)
+        if (this.state.graph.completed && ( this.state.graph.completed + 30 > this.state.relativeTimestamp)) {
+            clearInterval(this.timer);
+            this.timer = null;
+        }
     }
 
     componentDidMount() {
 
+    }
+
+
+    componentWillUnmount() {
+        if (this.timer !== null) {
+            clearInterval(this.timer);
+            this.timer = null;
+        }
     }
 
     selectNode(node) {
@@ -27,31 +47,21 @@ class GraphTimeline extends React.Component {
     }
 
     render() {
-        let completedTime = null;
         let nodes = this.state.graph.getNodes();
-
-
-        let minCreateTime = nodes.reduce((v, n) => Math.min(v, n.created), Infinity);
-
-        let maxTime = nodes.reduce((v, n) => Math.max(v, n.completed), -Infinity);
-
-        console.log(`graph timelines are ${this.state.graph.created} ->${minCreateTime} -> ${maxTime}`);
-
 
         let startTs = this.state.graph.created;
 
         let relativeX = function (timeStamp) {
-            return (timeStamp - startTs) * 0.1;
+            return (timeStamp - startTs) * 0.05;
         };
 
-        let idx = 0;
-        let nodeElements = nodes.map((node) => {
-            let createTs = relativeX(node.created);
-            let startTs = relativeX(node.started);
-            let startTime = startTs;
-            let duration = relativeX(node.completed) - relativeX(node.started);
+        let runningElements = [];
+        let pendingElements = [];
 
-            var styleExtra = '';
+        nodes.forEach((node, idx) => {
+            let createTs = relativeX(node.created);
+
+            let styleExtra = '';
             switch (node.state) {
                 case 'failed':
                     styleExtra = styles.failed;
@@ -67,80 +77,108 @@ class GraphTimeline extends React.Component {
                     break;
 
             }
+
             if (this.state.selectedNode === node) {
                 styleExtra += ' ' + styles.selected;
             }
+
             const nodeHeight = 30;
+            let deps = "";
+            if (node.dependencies.length !== 0) {
+                deps = "Dependencies: Stage " + node.dependencies;
+            }
 
-            let runboxStyle = {
-                position: 'absolute',
-                height: '20px',
-                width: '' + duration + 'px',
-                top: '' + (idx * nodeHeight) + 'px',
-                left: startTs
-            };
+            if (node.started) {
+                let duration = relativeX(node.completed) - relativeX(node.started);
 
-            let waitingTime = startTs - createTs;
+                let startTs = relativeX(node.started);
 
-
-            let waitElem;
-
-            if (waitingTime > 10) {
-                let createboxStyle = {
+                let runboxStyle = {
                     position: 'absolute',
                     height: '20px',
-                    width: 1,
+                    width: '' + duration + 'px',
                     top: '' + (idx * nodeHeight) + 'px',
-                    left: createTs
+                    left: startTs
                 };
 
-                let depLineStyle = {
+                let waitingTime = startTs - createTs;
+
+
+                let waitElem;
+
+                if (waitingTime > 10) {
+                    waitElem = GraphTimeline.createWaitLine(idx, nodeHeight, createTs, startTs);
+                }
+
+                runningElements.push(<div key={node.stage_id}>
+                        {waitElem}
+                        <div className={styles.node + ' ' + styleExtra}
+                             style={runboxStyle}
+                             onClick={(e) => this.selectNode(node)}
+                             data-tooltip={node.op + ": " + node.state + "\n" + deps}
+                        > {node.stage_id}:{node.op} {duration.toFixed(0) + 'ms'}</div>
+                    </div>
+                );
+            } else {
+
+                let waitElem = GraphTimeline.createWaitLine(idx, nodeHeight, createTs, Date.now());
+                runningElements.push(<div key={node.stage_id}>{waitElem}</div>);
+                let pendingStyle = {
                     position: 'absolute',
-                    width: startTs - createTs,
-                    height: '1px',
-                    top: '' + ((idx * nodeHeight) + nodeHeight / 2 - 5) + 'px',
-                    left: createTs
+                    height: '20px',
+                    top: '' + (idx * nodeHeight) + 'px',
                 };
-                waitElem =(<div>
-                  <div className={styles.createnode} style={createboxStyle}>&nbsp;</div>
-                <div className={styles.hdepline} style={depLineStyle}>&nbsp;</div>
-                </div>);
+                pendingElements.push(<div key={node.stage_id}>
+                        <div className={styles.node + ' ' + styleExtra}
+                             style={pendingStyle}
+                             onClick={(e) => this.selectNode(node)}
+                             data-tooltip={node.op + ": " + node.state + "\n" + deps}
+                        > {node.stage_id}:{node.op}</div>
+                    </div>
+                );
             }
 
-            let deps = ""
-            if(node.dependencies.length !== 0){
-              deps = "Dependencies: Stage " + node.dependencies;
-            }
-
-            idx++;
-            return (<div key={node.stage_id}>
-                    {waitElem}
-                    <div className={styles.node + ' ' + styleExtra}
-                         style={runboxStyle}
-                         onClick={(e) => this.selectNode(node)}
-                         data-tooltip={node.op + ": " + node.state + "\n" + deps}
-                         > {node.stage_id}:{node.op} {duration.toFixed(0) + 'ms'}</div>
-                </div>
-            );
         });
 
-        let widthDiff = 700;
+        let widthDiff = 850;
 
         widthDiff = widthDiff - (relativeX(this.state.relativeTimestamp));
 
         let position = {left: widthDiff + 'px'};
         return (
-          <div>
-            <div className={styles.outerView}>
-                <div className={styles.viewport}>
-                  <div className={styles.innerViewport} id="innerViewport" style={position}>
-                    {nodeElements}
-                  </div>
+            <div>
+                <div className={styles.outerView}>
+                    <div className={styles.viewport}>
+                        <div className={styles.innerViewport} id="innerViewport" style={position}>
+                            {runningElements}
+                        </div>
+                    </div>
+                    <div className={styles.pendingArea}> {pendingElements}</div>
                 </div>
             </div>
-              <div>ts:{this.state.relativeTimestamp}</div>
-          </div>
         );
+    }
+
+    static createWaitLine(idx, nodeHeight, createTs, startTs) {
+        let createboxStyle = {
+            position: 'absolute',
+            height: '20px',
+            width: 1,
+            top: '' + (idx * nodeHeight) + 'px',
+            left: createTs
+        };
+
+        let depLineStyle = {
+            position: 'absolute',
+            width: startTs - createTs,
+            height: '1px',
+            top: '' + ((idx * nodeHeight) + nodeHeight / 2 - 5) + 'px',
+            left: createTs
+        };
+        return (<div>
+            <div className={styles.createnode} style={createboxStyle}>&nbsp;</div>
+            <div className={styles.hdepline} style={depLineStyle}>&nbsp;</div>
+        </div>);
     }
 }
 

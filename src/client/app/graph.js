@@ -76,7 +76,11 @@ class Graph {
                 this.main_ended = endTs;
             }
                 break;
-
+            case 'model.GraphCompletedEvent': {
+                const evtData = evt.data;
+                this.completed = Date.parse(evtData.ts);
+            }
+                break;
             default:
                 console.log(`Unrecognised event ${evt}`);
 

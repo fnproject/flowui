@@ -1,14 +1,21 @@
 import Graph from './graph.js';
 //import CompleterWsClient from "./completerclient";
 import MockCompleterClient from "./mockcompleterclient";
+import CompleterWsClient from "./completerclient";
 
 
 class Controller {
 
-    constructor(onChanged) {
+    constructor(onChanged, mock) {
         this.known_graphs = new Set();
         this.active_graphs = new Map();
-        this.client = new MockCompleterClient((e)=>{this.receiveEvent(e);})
+
+        // this.client = new MockCompleterClient((e) => {
+        //     this.receiveEvent(e);
+        // });
+        this.client = new CompleterWsClient((e) => {
+            this.receiveEvent(e);
+        });
         this.on_changed = onChanged;
         this.debounce_timeout = null;
 
@@ -24,7 +31,7 @@ class Controller {
             case '_all':
                 switch (event.type) {
                     case 'model.GraphCreatedEvent':
-                        this.known_graphs.add(event.data.graph_id);
+                        this.known_graphs.add(event);
                         break;
                 }
                 break;
@@ -45,21 +52,25 @@ class Controller {
             }
 
         }
-        this.deBounce(()=>this.on_changed(this),100);
+        this.deBounce(() => this.on_changed(this), 100);
     }
 
     //debounces the number of updates to the runtime down to  a max of 10x per second
-    deBounce(fn,deadline){
-        if(this.debounce_timeout === null){
-            this.debounce_timeout = setTimeout(()=>{ this.debounce_timeout = null; fn()},deadline)
+    deBounce(fn, deadline) {
+        if (this.debounce_timeout === null) {
+            this.debounce_timeout = setTimeout(() => {
+                this.debounce_timeout = null;
+                fn()
+            }, deadline)
         }
     }
+
     getActiveGraphs() {
         return this.active_graphs;
     }
 
-    getKnownGraphIds() {
-        return this.known_graphs;
+    getKnownGraphs() {
+        return Array.from(this.known_graphs);
     }
 
 }
