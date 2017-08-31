@@ -26,6 +26,29 @@ class GraphTimeline extends React.Component {
         this.state.onNodeSelected(this.state.graph, node);
     }
 
+    createWaitingElem(idx,nodeHeight,fromTs,duration){
+      let createboxStyle = {
+          position: 'absolute',
+          height: '20px',
+          width: 1,
+          top: '' + (idx * nodeHeight) + 'px',
+          left: fromTs
+      };
+
+      let depLineStyle = {
+          position: 'absolute',
+          width: duration + 'px',
+          height: '1px',
+          top: '' + ((idx * nodeHeight) + nodeHeight / 2 - 5) + 'px',
+          left: fromTs
+      };
+
+      return(<div>
+        <div className={styles.createnode} style={createboxStyle}>&nbsp;</div>
+      <div className={styles.hdepline} style={depLineStyle}>&nbsp;</div>
+      </div>);
+    }
+
     render() {
         let completedTime = null;
         let nodes = this.state.graph.getNodes();
@@ -41,15 +64,14 @@ class GraphTimeline extends React.Component {
         let startTs = this.state.graph.created;
 
         let relativeX = function (timeStamp) {
-            return (timeStamp - startTs) * 0.1;
+            return (timeStamp - startTs) * 0.06;
         };
 
         let pendingElems = [];
-        let idx = 0;
-        let nodeElements = nodes.map((node) => {
+        let nodeElements =[];
+
+         nodes.forEach((node,idx) => {
             let createTs = relativeX(node.created);
-            let startTs = relativeX(node.started);
-            let duration = relativeX(node.completed) - relativeX(node.started);
 
             var styleExtra = '';
             switch (node.state) {
@@ -72,72 +94,61 @@ class GraphTimeline extends React.Component {
             }
             const nodeHeight = 30;
 
-            let runboxStyle = {
-                position: 'absolute',
-                height: '20px',
-                width: '' + duration + 'px',
-                top: '' + (idx * nodeHeight) + 'px',
-                left: startTs
-            };
-
-            let waitingTime = startTs - createTs;
 
 
-            let waitElem;
-
-            if (waitingTime > 10) {
-                let createboxStyle = {
-                    position: 'absolute',
-                    height: '20px',
-                    width: 1,
-                    top: '' + (idx * nodeHeight) + 'px',
-                    left: createTs
-                };
-
-                let depLineStyle = {
-                    position: 'absolute',
-                    width: startTs - createTs,
-                    height: '1px',
-                    top: '' + ((idx * nodeHeight) + nodeHeight / 2 - 5) + 'px',
-                    left: createTs
-                };
-
-                waitElem =(<div>
-                  <div className={styles.createnode} style={createboxStyle}>&nbsp;</div>
-                <div className={styles.hdepline} style={depLineStyle}>&nbsp;</div>
-                </div>);
-            }
 
             let deps = ""
             if(node.dependencies.length !== 0){
               deps = "Dependencies: Stage " + node.dependencies;
             }
 
-            idx++;
             if(node.state === 'pending'){
-              let pendElem = (<div className={styles.node + ' ' + styleExtra}
-                   style={runboxStyle}
+              let pendingboxStyle = {
+                  position: 'absolute',
+                  height:'20px',
+                  top: '' + (idx * nodeHeight) + 'px',
+              };
+              let pendElem = (<div key={node.stage_id} className={styles.node + ' ' + styleExtra}
+                   style={pendingboxStyle}
                    onClick={(e) => this.selectNode(node)}
                    data-tooltip={node.op + ": " + node.state + "\n" + deps}
-                   > {node.stage_id}:{node.op} {duration.toFixed(0) + 'ms'}</div>);
+                   > {node.stage_id}:{node.op} </div>);
               pendingElems.push(pendElem);
-              return (<div></div>);
-            }
-            return (<div key={node.stage_id}>
+              let waitElem = this.createWaitingElem(idx,nodeHeight,createTs,relativeX(this.state.relativeTimestamp) - createTs);
+              nodeElements.push(<div key={node.stage_id}>{waitElem}</div>);
+
+            }else{
+              let startTs = relativeX(node.started);
+              let duration = relativeX(node.completed) - relativeX(node.started);
+
+              let waitingTime = startTs - createTs;
+              let waitElem;
+              if (waitingTime > 10) {
+                 waitElem= this.createWaitingElem(idx,nodeHeight,createTs,waitingTime);
+              }
+
+              let runboxStyle = {
+                  position: 'absolute',
+                  height: '20px',
+                  width: '' + duration + 'px',
+                  top: '' + (idx * nodeHeight) + 'px',
+                  left: startTs
+              };
+            nodeElements.push (<div key={node.stage_id}>
                     {waitElem}
                     <div className={styles.node + ' ' + styleExtra}
                          style={runboxStyle}
                          onClick={(e) => this.selectNode(node)}
                          data-tooltip={node.op + ": " + node.state + "\n" + deps}
-                         > {node.stage_id}:{node.op} {duration.toFixed(0) + 'ms'}</div>
+                         > {node.stage_id}:{node.op} {duration?(duration.toFixed(0) + 'ms'):""}</div>
                     </div>
+
             );
+          }
         });
 
         let widthDiff = 700;
-        let pendElems = pendingElems.map((elem) =>{
-          return elem;
-        })
+
 
         let thisStyle;
 
@@ -157,9 +168,9 @@ class GraphTimeline extends React.Component {
                     {nodeElements}
                   </div>
                 </div>
-                <div>{pendElems}</div>
+                <div>{pendingElems}</div>
             </div>
-              <div>ts:{this.state.relativeTimestamp}</div>
+              <div>ts:{new Date(this.state.relativeTimestamp).toISOString()}</div>
           </div>
         );
     }
