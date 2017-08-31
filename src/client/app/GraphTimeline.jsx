@@ -139,18 +139,21 @@ class GraphTimeline extends React.Component {
           return elem;
         })
 
+        let thisStyle;
+
         if((this.state.graph.finished < this.state.relativeTimestamp) && (this.state.graph.finished !== null)){
           widthDiff = widthDiff - (relativeX(this.state.graph.finished) + 10);
+          thisStyle = {left: widthDiff}
         } else {
           widthDiff = widthDiff - (relativeX(this.state.relativeTimestamp));
+          thisStyle = {left: widthDiff + 'px', overflow: 'visible'};
         }
 
-        let position = {left: widthDiff + 'px'};
         return (
           <div>
             <div className={styles.outerView}>
                 <div className={styles.viewport}>
-                  <div className={styles.innerViewport} id="innerViewport" style={position}>
+                  <div className={styles.innerViewport} id="innerViewport" style={thisStyle}>
                     {nodeElements}
                   </div>
                 </div>
