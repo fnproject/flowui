@@ -1,13 +1,13 @@
 
 .outerView {
   position: relative;
-  border: 1px solid blue;
+  border: 3px solid black;
   width: 1024px;
   height: 300px;
 }
 
 .viewport {
-    border: 3px solid black;
+    border-right: 3px solid black;
     height: 300px;
     width: 700px;
     overflow: hidden;
@@ -63,7 +63,7 @@
 
 .node.pending {
     position: relative;
-    left: 706px;
+    left: 703px;
     background-image: url('./stripe_pending.png');
     background-position: 0px 0px;
     background-repeat: repeat;
