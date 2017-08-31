@@ -26,10 +26,6 @@ class GraphTimeline extends React.Component {
         this.state.onNodeSelected(this.state.graph, node);
     }
 
-    append(divs) {
-
-    }
-
     render() {
         let completedTime = null;
         let nodes = this.state.graph.getNodes();
@@ -53,7 +49,6 @@ class GraphTimeline extends React.Component {
         let nodeElements = nodes.map((node) => {
             let createTs = relativeX(node.created);
             let startTs = relativeX(node.started);
-            let startTime = startTs;
             let duration = relativeX(node.completed) - relativeX(node.started);
 
             var styleExtra = '';
@@ -144,10 +139,12 @@ class GraphTimeline extends React.Component {
           return elem;
         })
 
-        console.log(nodeElements);
-        console.log(pendElems);
+        if((this.state.graph.finished < this.state.relativeTimestamp) && (this.state.graph.finished !== null)){
+          widthDiff = widthDiff - (relativeX(this.state.graph.finished) + 10);
+        } else {
+          widthDiff = widthDiff - (relativeX(this.state.relativeTimestamp));
+        }
 
-        widthDiff = widthDiff - (relativeX(this.state.relativeTimestamp));
         let position = {left: widthDiff + 'px'};
         return (
           <div>

@@ -10,6 +10,7 @@ class Graph {
         this.graph_id = createdEvent.data.graph_id;
         this.created = Date.parse(createdEvent.data.ts);
         this.main_ended = null;
+        this.finished = null;
         this.all_events = [];
         this.stage_map = new Map();
     }
@@ -74,6 +75,12 @@ class Graph {
                 const evtData = evt.data;
                 const endTs = Date.parse(evtData.ts);
                 this.main_ended = endTs;
+            }
+                break;
+            case 'model.GraphCompletedEvent' : {
+                const evtData = evt.data;
+                const endTs = Date.parse(evtData.ts);
+                this.finished = endTs;
             }
                 break;
 
