@@ -149,16 +149,9 @@ class GraphTimeline extends React.Component {
 
         let widthDiff = 700;
 
+        widthDiff = widthDiff - (relativeX(this.state.relativeTimestamp));
+        let thisStyle = {left: widthDiff + 'px', overflow: 'visible'};
 
-        let thisStyle;
-
-        if((this.state.graph.finished < this.state.relativeTimestamp) && (this.state.graph.finished !== null)){
-          widthDiff = widthDiff - (relativeX(this.state.graph.finished) + 10);
-          thisStyle = {left: widthDiff}
-        } else {
-          widthDiff = widthDiff - (relativeX(this.state.relativeTimestamp));
-          thisStyle = {left: widthDiff + 'px', overflow: 'visible'};
-        }
 
         return (
           <div>
