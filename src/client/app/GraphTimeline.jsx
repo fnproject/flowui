@@ -26,6 +26,10 @@ class GraphTimeline extends React.Component {
         this.state.onNodeSelected(this.state.graph, node);
     }
 
+    append(divs) {
+
+    }
+
     render() {
         let completedTime = null;
         let nodes = this.state.graph.getNodes();
@@ -44,6 +48,7 @@ class GraphTimeline extends React.Component {
             return (timeStamp - startTs) * 0.1;
         };
 
+        let pendingElems = [];
         let idx = 0;
         let nodeElements = nodes.map((node) => {
             let createTs = relativeX(node.created);
@@ -101,6 +106,7 @@ class GraphTimeline extends React.Component {
                     top: '' + ((idx * nodeHeight) + nodeHeight / 2 - 5) + 'px',
                     left: createTs
                 };
+
                 waitElem =(<div>
                   <div className={styles.createnode} style={createboxStyle}>&nbsp;</div>
                 <div className={styles.hdepline} style={depLineStyle}>&nbsp;</div>
@@ -113,6 +119,15 @@ class GraphTimeline extends React.Component {
             }
 
             idx++;
+            if(node.state === 'pending'){
+              let pendElem = (<div className={styles.node + ' ' + styleExtra}
+                   style={runboxStyle}
+                   onClick={(e) => this.selectNode(node)}
+                   data-tooltip={node.op + ": " + node.state + "\n" + deps}
+                   > {node.stage_id}:{node.op} {duration.toFixed(0) + 'ms'}</div>);
+              pendingElems.push(pendElem);
+              return (<div></div>);
+            }
             return (<div key={node.stage_id}>
                     {waitElem}
                     <div className={styles.node + ' ' + styleExtra}
@@ -120,14 +135,19 @@ class GraphTimeline extends React.Component {
                          onClick={(e) => this.selectNode(node)}
                          data-tooltip={node.op + ": " + node.state + "\n" + deps}
                          > {node.stage_id}:{node.op} {duration.toFixed(0) + 'ms'}</div>
-                </div>
+                    </div>
             );
         });
 
         let widthDiff = 700;
+        let pendElems = pendingElems.map((elem) =>{
+          return elem;
+        })
+
+        console.log(nodeElements);
+        console.log(pendElems);
 
         widthDiff = widthDiff - (relativeX(this.state.relativeTimestamp));
-
         let position = {left: widthDiff + 'px'};
         return (
           <div>
@@ -137,6 +157,7 @@ class GraphTimeline extends React.Component {
                     {nodeElements}
                   </div>
                 </div>
+                <div>{pendElems}</div>
             </div>
               <div>ts:{this.state.relativeTimestamp}</div>
           </div>

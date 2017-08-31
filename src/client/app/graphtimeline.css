@@ -38,7 +38,6 @@
     background-color: lightcoral;
 }
 
-
 @keyframes animatedBackground {
     from { background-position: 0 0; }
     to { background-position: 100% 0; }
@@ -63,9 +62,12 @@
 }
 
 .node.pending {
+    position: relative;
+    left: 706px;
     background-image: url('./stripe_pending.png');
     background-position: 0px 0px;
     background-repeat: repeat;
+    z-index: 4;
 }
 
 .node.running {
