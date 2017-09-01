@@ -8,29 +8,37 @@ class GraphTimeline extends React.Component {
         super(props);
 
         this.state = {
+            pxPerMs: 0.06,
+            nodeHeight: 30,
             onNodeSelected: props.onNodeSelected,
             graph: props.graph,
-            live:  props.live,
+            live: props.graph.finished == null,
             selectedNode: null,
             dependenciesOfSelected: new Set(),
-            relativeTimestamp: Date.now(),
-            cursorTs: Date.now(),
-            intervalTimer: -1,
-            responseOfSelected: null
+            responseOfSelected: null,
+            cursorTs: props.graph.created,
+            intervalTimer: -1
         };
         this.selectNode = this.selectNode.bind(this);
         this.updateScroll = this.updateScroll.bind(this);
 
-        this.state.graph.On('model.GraphCompletedEvent',(evt)=>{
+        this.state.graph.On('model.GraphCompletedEvent', (evt) => {
             console.log("Graph completed");
             this.setLive(false);
         });
     }
 
     componentDidMount() {
-        if (this.state.live) {
-            this.setLive(this.state.live)
+
+        if (this.props.graph.completed) {
+            if (this.state.live) {
+                this.setLive(false)
+            }
+        } else {
+            this.setLive(this.state.live);
+            this.setState(this.state);
         }
+
     }
 
     updateScroll(ts) {
@@ -38,20 +46,21 @@ class GraphTimeline extends React.Component {
             this.setLive(false);
         }
 
-        this.state.relativeTimestamp = ts;
+        this.state.cursorTs = ts;
         this.setState(this.state);
 
     }
 
     setLive(live) {
         this.state.live = live;
+        console.log("LIVE", live);
         if (live) {
-            this.state.intervalTimer = setInterval(()=>{
-                this.state.relativeTimestamp = this.state.cursorTs = Date.now();
+            this.state.intervalTimer = setInterval(() => {
+                //this.state.cursorTs = Date.now();
                 this.setState(this.state);
-            },50);
-        }else{
-            if(this.state.intervalTimer> 0){
+            }, 50);
+        } else {
+            if (this.state.intervalTimer > 0) {
                 clearTimeout(this.state.intervalTimer);
                 this.state.intervalTimer = null;
             }
@@ -117,14 +126,10 @@ class GraphTimeline extends React.Component {
 
     render() {
         let nodes = this.state.graph.getNodes();
-        let minCreateTime = nodes.reduce((v, n) => Math.min(v, n.created), Infinity);
-
         //console.log(`graph timelines are ${this.state.graph.created} ->${minCreateTime}`);
-
-
         let startTs = this.state.graph.created;
-        let pxPerMs = 0.06;
 
+        let pxPerMs = this.state.pxPerMs;
         // converts a timestamp to a relative X in the display viewport
         let relativeX = function (timeStamp) {
             return (timeStamp - startTs) * pxPerMs;
@@ -140,37 +145,41 @@ class GraphTimeline extends React.Component {
             findDeps(dep, depsMap).forEach((transitiveDep) => transitiveDependenciesOfNode.add(transitiveDep));
           })
           return transitiveDependenciesOfNode;
+        };
+
+        // main function elem
+        let mainFnWidth;
+        let mainClasses = [styles.node, styles.mainfn];
+
+        if (this.state.graph.main_ended !== null) {
+            mainFnWidth = relativeX(this.state.graph.main_ended);
+        } else {
+            mainClasses.push(styles.running);
+            mainFnWidth = relativeX(Date.now());
         }
 
-        let lifeWidth;
-        if (this.state.graph.main_ended !== null) {
-            lifeWidth = relativeX(this.state.graph.main_ended);
-        } else {
-            lifeWidth = 1024;
-        }
-        let mainLifeStyle = {
+        let mainFnStyle = {
             position: 'absolute',
             height: '20px',
-            width: '' + lifeWidth + 'px',
+            width: '' + mainFnWidth + 'px',
             top: '0px',
             left: '0px'
         };
 
-        //console.log("Ended: " + this.state.graph.main_ended);
 
-        let lifeElem = (<div key='0'>
-            <div className={styles.node + ' ' + styles.lifecycle}
-                 style={mainLifeStyle}> {this.state.graph.function_id} </div>
+        let mainFnElem = (<div key='0'>
+            <div className={mainClasses.join(' ')}
+                 style={mainFnStyle}> {this.state.graph.function_id} </div>
         </div>);
 
         let pendingElems = [];
         let nodeElements = [];
         var dependencyMap = new Map();
 
-        nodeElements.push(lifeElem);
+        nodeElements.push(mainFnElem);
 
         nodes.forEach((node, idx) => {
-            let createTs = relativeX(node.created);
+            let createPx = relativeX(node.created);
             dependencyMap.set(node.stage_id, node.dependencies);
 
             var styleExtra = '';
@@ -207,7 +216,7 @@ class GraphTimeline extends React.Component {
             const nodeHeight = 30;
 
 
-            let deps = ""
+            let deps = "";
             if (node.dependencies.length !== 0) {
                 deps = "Dependencies: Stage " + node.dependencies;
             }
@@ -216,7 +225,7 @@ class GraphTimeline extends React.Component {
                 let pendingboxStyle = {
                     position: 'absolute',
                     height: '20px',
-                    top: '' + ((idx + 1) * nodeHeight) + 'px',
+                    top: '' + ((idx + 1) * this.state.nodeHeight) + 'px',
                 };
                 let pendElem = (<div key={node.stage_id + 1} className={styles.node + ' ' + styleExtra}
                                      style={pendingboxStyle}
@@ -224,25 +233,25 @@ class GraphTimeline extends React.Component {
                                      data-tooltip={node.op + ": " + node.state + "\n" + deps}
                 > {node.stage_id}:{node.op} </div>);
                 pendingElems.push(pendElem);
-                let waitElem = this.createWaitingElem(idx, nodeHeight, createTs, relativeX(this.state.relativeTimestamp) - createTs);
+                let waitElem = this.createWaitingElem(idx, this.state.nodeHeight, createPx, relativeX(Date.now()) - createPx);
                 nodeElements.push(<div key={node.stage_id + 1}>{waitElem}</div>);
 
             } else {
-                let startTs = relativeX(node.started);
-                let duration = relativeX(node.completed) - relativeX(node.started);
-
-                let waitingTime = startTs - createTs;
+                let startPx = relativeX(node.started);
+                let widthPx = (node.completed ? relativeX(node.completed) : relativeX(Date.now())) - relativeX(node.started);
+                let durationMs = node.completed ? node.completed - node.started : Date.now() - node.started;
+                let waitingTimePx = startPx - relativeX(node.created);
                 let waitElem;
-                if (waitingTime > 10) {
-                    waitElem = this.createWaitingElem(idx, nodeHeight, createTs, waitingTime);
+                if (waitingTimePx > 10) {
+                    waitElem = this.createWaitingElem(idx, this.state.nodeHeight, createPx, waitingTimePx);
                 }
 
                 let runboxStyle = {
                     position: 'absolute',
                     height: '20px',
-                    width: '' + duration + 'px',
-                    top: '' + ((idx + 1) * nodeHeight) + 'px',
-                    left: startTs
+                    width: '' + widthPx + 'px',
+                    top: '' + ((idx + 1) * this.state.nodeHeight) + 'px',
+                    left: startPx
                 };
                 nodeElements.push(<div key={node.stage_id + 1}>
                         {waitElem}
@@ -250,23 +259,24 @@ class GraphTimeline extends React.Component {
                              style={runboxStyle}
                              onClick={(e) => this.selectNode(node)}
                              data-tooltip={node.op + ": " + node.state + "\n" + deps}
-                        > {node.stage_id}:{node.op} {duration ? (duration.toFixed(0) + 'ms') : ""}</div>
+                        > {node.stage_id}:{node.op} {durationMs ? (durationMs.toFixed(0) + 'ms') : ""}</div>
                     </div>
                 );
             }
         });
 
-        let widthDiff = 850;
 
         let thisStyle;
 
-        if ((this.state.graph.finished < this.state.relativeTimestamp) && (this.state.graph.finished !== null)) {
-            let timePlus = relativeX(this.state.graph.finished) + 10;
-            thisStyle = {left: '0px', width: timePlus + 'px'};
+        let vpWidth;
+        if ((this.state.graph.finished < this.state.cursorTs) && (this.state.graph.finished !== null)) {
+            vpWidth = relativeX(this.state.graph.finished) + 10;
         } else {
-            widthDiff = widthDiff - (relativeX(this.state.relativeTimestamp));
-            thisStyle = {left: widthDiff, width: '1024px'};
+            vpWidth = relativeX(Date.now()) + 10;
         }
+
+
+        thisStyle = {left: relativeX(this.state.cursorTs), minWidth: vpWidth + 'px'};
 
         return (
             <div>
@@ -280,6 +290,7 @@ class GraphTimeline extends React.Component {
                 </div>
                 <ZoomLine graph={this.state.graph} windowDurationMs={1024 / pxPerMs} cursorTs={this.state.cursorTs}
                           maxTs={this.state.relativeTimestamp}
+                          minScale={this.state.pxPerMs}
                           onScrollChanged={this.updateScroll} width={1024}/>
                         <div className={styles.nodeInfo}>
                           {JSON.stringify(this.state.responseOfSelected)}

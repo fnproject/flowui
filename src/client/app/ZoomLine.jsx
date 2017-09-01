@@ -9,20 +9,21 @@ class ZoomLine extends React.Component {
         //console.log(props);
 
         this.state = {
-            windowDurationMs: props.windowDurationMs ,
+            windowDurationMs: props.windowDurationMs,
             maxTs: props.maxTs,
             cursorTs: props.cursorTs,
             onScrollChanged: props.onScrollChanged,
             graph: props.graph,
             width: props.width,
-            height:100
+            minScale: props.minScale,
+            height: 100
         };
     }
 
     componentWillReceiveProps(props) {
         //console.log(props);
 
-        this.state.windowDurationMs= props.windowDurationMs;
+        this.state.windowDurationMs = props.windowDurationMs;
         this.state.maxTs = props.maxTs;
         this.state.cursorTs = props.cursorTs;
 
@@ -35,7 +36,7 @@ class ZoomLine extends React.Component {
     render() {
 
 
-        let nodesByStart = this.state.graph.getNodes().filter((n)=>n["started"] !=null);
+        let nodesByStart = this.state.graph.getNodes().filter((n) => n["started"] != null);
         nodesByStart.sort((a, b) => a.started - b.started);
         // running sorted by completion time (increasing)
         let running = [];
@@ -43,26 +44,15 @@ class ZoomLine extends React.Component {
 
 
         // todo  deal with running nodes
-        if(nodesByStart.length === 0){
-          return (
-            <div>
+        if (nodesByStart.length === 0) {
+            return (
+                <div>
 
-            </div>
-          )
+                </div>
+            )
         }
         var minTs = this.state.graph.created;
 
-        // map
-        let relativeX = function (ts) {
-            let ratio = (this.state.width) / (this.state.maxTs - minTs);
-
-            let val =  (ts - minTs) * Math.min(ratio,100/this.state.width);
-            //console.log(`${ts} -> ${val} r${ratio}`);
-            return val;
-        };
-
-
-        relativeX = relativeX.bind(this);
 
         nodesByStart.forEach((node) => {
             let ts = node.started;
@@ -81,38 +71,72 @@ class ZoomLine extends React.Component {
             }
             linePoints.push([node.started, running.length]);
         });
-        running.forEach((rnode) => {
-            running.splice(running.indexOf(rnode), 1);
-            linePoints.push([Date.now(), running.length]);
+
+        var runningCount = running.length;
+        running.forEach((rnode, i) => {
+            if(rnode.completed){
+                runningCount-=1;
+                linePoints.push([rnode.completed, runningCount]);
+            }
         });
 
+        if(runningCount > 0){
+            linePoints.push([Date.now(),runningCount]);
+        }
 
-        var maxCount = linePoints.reduce((v,e)=>Math.max(v,e[1]),0);
+
+        const maxCount = linePoints.reduce((v, e) => Math.max(v, e[1]), 0);
+        let boxes = []; //[[start,end, count],...]
+
+        let lastPoint = [this.state.graph.created, 0];
+        const maxTs = this.state.graph.finished ? this.state.graph.finished : Date.now();
+
+        console.log(linePoints);
+
+        linePoints.forEach((lp, idx) => {
+            boxes.push([lastPoint[0], lp[0], lastPoint[1]]);
+            lastPoint = lp;
+        });
+
+        let relativeX = function (timeStamp) {
+            // graph duration is less than the window, render whatever we have at a fixed scale
+
+            return (timeStamp - minTs) * 0.06;
+        };
+
+        relativeX = relativeX.bind(this);
+
         let relativeY = function (count) {
-            return count * (this.state.height/maxCount);
+            var  minMax = Math.max(maxCount,4);
+            return count * (this.state.height / minMax);
+
         };
         relativeY = relativeY.bind(this);
 
-        var lastPoint = [minTs, 0];
-        let elems = [];
-
-        linePoints.forEach((point,i) => {
+        let elems = boxes.map((box, i) => {
             let estyle = {
 
-                height: relativeY(lastPoint[1]) + 'px',
-                left: relativeX(lastPoint[0])+ 'px',
-                width: relativeX(point[0]) - relativeX(lastPoint[0]) + 'px'
+                height: relativeY(box[2]) + 'px',
+                left: relativeX(box[0]) + 'px',
+                width: relativeX(box[1]) - relativeX(box[0]) + 'px'
 
             };
-            console.log("e",estyle);
-            elems.push((<div  key={point} className={styles.graphblock} style={estyle}></div> ));
-            lastPoint = point;
+            return (<div data-tooltip={JSON.stringify(box)} key={i} className={styles.graphblock}
+                         style={estyle}></div> );
         });
 
-        //console.log(elems);
-        return (<div style={{position: 'relative', width: this.state.width + 'px', height: this.state.height + "px", border:"1px solid black"}} className={styles.viewport}>
+        //console.log(linePoints);
+        return (<div>
+            <div style={{
+                position: 'relative',
+                width: this.state.width + 'px',
+                height: this.state.height + "px",
+                border: "1px solid black"
+            }} className={styles.viewport}>
 
-            {elems}
+                {elems}
+            </div>
+            <pre>{JSON.stringify(boxes.map((a) => [a[0] - minTs, a[1], a[2]]))}</pre>
         </div>)
     }
 }

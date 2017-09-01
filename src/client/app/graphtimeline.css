@@ -7,13 +7,14 @@
 }
 
 .viewport {
-    border-right: 3px solid black;
+    border-right: 1px solid black;
     height: 300px;
-    width: 700px;
+    width: 850px;
     overflow: hidden;
 }
 
-.innerViewport {
+.innerViewport{
+    border-right: 1px dotted gray;
   position: relative;
   height: 300px;
 }
@@ -75,26 +76,39 @@
 
 .node.pending {
     position: relative;
-    left: 703px;
+    left: 853px;
     background-image: url('./stripe_pending.png');
     background-position: 0px 0px;
     background-repeat: repeat;
     z-index: 4;
+    margin-left: 5px;
+    animation: pendingappear  300ms ;
+
 }
 
 .node.running {
+    border-top-right-radius: 0px;
+    border-bottom-right-radius: 0px;
+
     background-image: url('./stripe_run.png');
     background-position: 0px 0px;
     background-repeat: repeat;
-    animation: animatedBackground 30s linear infinite;
-    width: 1024px;
+
+    animation: animatedBackground 20s linear infinite;
 }
 
-.node.lifecycle {
+.node.mainfn {
   background-color: lightblue;
   background-position: 0px 0px;
+
 }
 
+.node.mainfn.running {
+    background-color: lightblue;
+    background-position: 0px 0px;
+    border-top-right-radius: 0px;
+    border-bottom-right-radius: 0px;
+}
 [data-tooltip] {
   position: relative;
   z-index: 4;
