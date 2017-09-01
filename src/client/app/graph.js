@@ -53,7 +53,6 @@ class Graph {
             }
                 break;
             case 'model.DelayScheduledEvent': {
-
                 updateStage(evt.data.stage_id, (stage) => {
                     stage.state = 'running';
                     stage.started = Date.parse(evt.data.ts);

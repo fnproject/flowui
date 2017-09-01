@@ -59,7 +59,7 @@ class App extends React.Component {
                 </div>
             );
         }
-        console.log(graph);
+        //console.log(graph);
         return (
             <div>
                 <GraphTimeline live={true} graph={graph} onNodeSelected={this.onNodeSelected}/>

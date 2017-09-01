@@ -6,4 +6,9 @@
 
 .graphblock {
     background-color: lightgray;
+    position: absolute;
+    bottom: 0;
+    border:0;
+    padding:0;
+    margin:0;
 }

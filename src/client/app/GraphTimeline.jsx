@@ -31,10 +31,14 @@ class GraphTimeline extends React.Component {
         }
     }
 
-    updateScroll() {
+    updateScroll(ts) {
         if (this.state.live) {
             this.setLive(false);
         }
+
+        this.state.relativeTimestamp = ts;
+        this.setState(this.state);
+
     }
 
     setLive(live) {
@@ -57,6 +61,7 @@ class GraphTimeline extends React.Component {
         this.state.selectedNode = node;
         this.state.onNodeSelected(this.state.graph, node);
         this.setLive(false);
+        this.setState(this.state);
     }
 
     createWaitingElem(idx, nodeHeight, fromTs, duration) {
@@ -86,7 +91,7 @@ class GraphTimeline extends React.Component {
         let nodes = this.state.graph.getNodes();
         let minCreateTime = nodes.reduce((v, n) => Math.min(v, n.created), Infinity);
 
-        console.log(`graph timelines are ${this.state.graph.created} ->${minCreateTime}`);
+        //console.log(`graph timelines are ${this.state.graph.created} ->${minCreateTime}`);
 
 
         let startTs = this.state.graph.created;
@@ -112,7 +117,7 @@ class GraphTimeline extends React.Component {
             left: '0px'
         };
 
-        console.log("Ended: " + this.state.graph.main_ended);
+        //console.log("Ended: " + this.state.graph.main_ended);
 
         let lifeElem = (<div key='0'>
             <div className={styles.node + ' ' + styles.lifecycle}
@@ -214,15 +219,16 @@ class GraphTimeline extends React.Component {
         return (
             <div>
                 <div className={styles.outerView}>
-                    <div className={styles.viewport} style={{overflowX: 'scroll'}}>
+                    <div className={styles.viewport}>
                         <div className={styles.innerViewport} id="innerViewport" style={thisStyle}>
                             {nodeElements}
                         </div>
                     </div>
                     <div>{pendingElems}</div>
                 </div>
-                {/*<ZoomLine graph={this.state.graph} windowDurationMs={1024 / pxPerMs} cursorTs={this.state.cursorTs}*/}
-                          {/*onSelectionChanged={this.updateScroll}/>*/}
+                <ZoomLine graph={this.state.graph} windowDurationMs={1024 / pxPerMs} cursorTs={this.state.cursorTs}
+                          maxTs={this.state.relativeTimestamp}
+                          onScrollChanged={this.updateScroll} width={1024}/>
             </div>
         );
     }
