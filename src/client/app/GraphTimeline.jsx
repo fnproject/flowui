@@ -12,6 +12,7 @@ class GraphTimeline extends React.Component {
             graph: props.graph,
             live:  props.live,
             selectedNode: null,
+            dependenciesOfSelected: new Set(),
             relativeTimestamp: Date.now(),
             cursorTs: Date.now(),
             intervalTimer: -1
@@ -102,6 +103,17 @@ class GraphTimeline extends React.Component {
             return (timeStamp - startTs) * pxPerMs;
         };
 
+        let findDeps = function (nodeId, depsMap) {
+          let depsOfNode = depsMap.get(nodeId);
+          if (depsOfNode.length === 0){
+            return new Set();
+          }
+          let transitiveDependenciesOfNode = new Set(depsOfNode);
+          depsOfNode.forEach((dep) => {
+            findDeps(dep, depsMap).forEach((transitiveDep) => transitiveDependenciesOfNode.add(transitiveDep));
+          })
+          return transitiveDependenciesOfNode;
+        }
 
         let lifeWidth;
         if (this.state.graph.main_ended !== null) {
@@ -126,19 +138,27 @@ class GraphTimeline extends React.Component {
 
         let pendingElems = [];
         let nodeElements = [];
+        var dependencyMap = new Map();
 
         nodeElements.push(lifeElem);
 
         nodes.forEach((node, idx) => {
             let createTs = relativeX(node.created);
+            dependencyMap.set(node.stage_id, node.dependencies);
 
             var styleExtra = '';
             switch (node.state) {
                 case 'failed':
                     styleExtra = styles.failed;
+                    if(this.state.dependenciesOfSelected.has(node.stage_id)) {
+                      styleExtra = styles.depfailed;
+                    }
                     break;
                 case 'successful':
                     styleExtra = styles.successful;
+                    if(this.state.dependenciesOfSelected.has(node.stage_id)) {
+                      styleExtra = styles.depsuccess;
+                    }
                     break;
                 case 'running':
                     styleExtra = styles.running;
@@ -148,9 +168,15 @@ class GraphTimeline extends React.Component {
                     break;
 
             }
+
+
+
             if (this.state.selectedNode === node) {
-                styleExtra += ' ' + styles.selected;
+                this.state.dependenciesOfSelected = findDeps(node.stage_id, dependencyMap);
+                this.state.dependenciesOfSelected.add(node.stage_id);
             }
+
+
             const nodeHeight = 30;
 
 

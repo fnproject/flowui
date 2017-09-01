@@ -9,7 +9,7 @@
 .viewport {
     border-right: 3px solid black;
     height: 300px;
-    width: 850px;
+    width: 700px;
     overflow: hidden;
 }
 
@@ -30,11 +30,11 @@
 }
 
 .node.successful {
-    background-color: lightgreen;
+    background-color: #ccffcc;
 }
 
 .node.failed {
-    background-color: lightcoral;
+    background-color: #ffcce0;
 }
 
 @keyframes animatedBackground {
@@ -60,28 +60,30 @@
     box-shadow: 0 0 10px #9ecaed;
 }
 
-@keyframes pendingappear {
-    from {opacity: 0;}
-    to {opacity: 1;}
+.node.depsuccess {
+  background-color: #00ff00;
+  border: 2px solid #00cc00;
+}
+
+.depfailed {
+  background-color: #ff0000;
+  border: 2px solid #cc0000;
 }
 
 .node.pending {
     position: relative;
-    left: 853px;
+    left: 703px;
     background-image: url('./stripe_pending.png');
     background-position: 0px 0px;
     background-repeat: repeat;
     z-index: 4;
-    margin-left: 5px;
-    animation: pendingappear  300ms ;
-
 }
 
 .node.running {
     background-image: url('./stripe_run.png');
     background-position: 0px 0px;
     background-repeat: repeat;
-    animation: animatedBackground 1s linear infinite;
+    animation: animatedBackground 30s linear infinite;
     width: 1024px;
 }
 
