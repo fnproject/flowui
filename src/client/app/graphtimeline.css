@@ -18,6 +18,10 @@
   height: 300px;
 }
 
+.nodeInfo {
+  width: 1024px;
+}
+
 .node{
     border-radius: 3px;
     border:1px solid darkcyan;
@@ -26,7 +30,6 @@
     white-space: nowrap;
     font-size:8pt;
     box-shadow: 3px 3px 3px 0px rgba(0,0,0,0.45);
-
 }
 
 .node.successful {

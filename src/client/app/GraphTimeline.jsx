@@ -15,7 +15,8 @@ class GraphTimeline extends React.Component {
             dependenciesOfSelected: new Set(),
             relativeTimestamp: Date.now(),
             cursorTs: Date.now(),
-            intervalTimer: -1
+            intervalTimer: -1,
+            responseOfSelected: null
         };
         this.selectNode = this.selectNode.bind(this);
         this.updateScroll = this.updateScroll.bind(this);
@@ -59,6 +60,32 @@ class GraphTimeline extends React.Component {
 
 
     selectNode(node) {
+      if(node.call_id){
+        console.log(node.function_id);
+        let self = this;
+        let index = node.function_id.indexOf("/");
+        let appId = node.function_id.substring(0, index);
+        fetch(`http://localhost:8080/v1/apps/${appId}/calls/${node.call_id}/log`)
+        .then(
+          function(response) {
+            if (response.ok) {
+              console.log('Looks like there was a problem. Status Code: ' +
+              response.status);
+              return;
+            }
+
+            response.json()
+              .then(function(data) {
+                self.state.responseOfSelected = data;
+              })
+              .catch(console.log);
+          }
+        )
+        .catch(function(err) {
+          console.log('Fetch Error :-S', err);
+        });
+      }
+
         this.state.selectedNode = node;
         this.state.onNodeSelected(this.state.graph, node);
         this.setLive(false);
@@ -241,7 +268,6 @@ class GraphTimeline extends React.Component {
             thisStyle = {left: widthDiff, width: '1024px'};
         }
 
-
         return (
             <div>
                 <div className={styles.outerView}>
@@ -255,6 +281,9 @@ class GraphTimeline extends React.Component {
                 <ZoomLine graph={this.state.graph} windowDurationMs={1024 / pxPerMs} cursorTs={this.state.cursorTs}
                           maxTs={this.state.relativeTimestamp}
                           onScrollChanged={this.updateScroll} width={1024}/>
+                        <div className={styles.nodeInfo}>
+                          {JSON.stringify(this.state.responseOfSelected)}
+                        </div>
             </div>
         );
     }
