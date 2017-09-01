@@ -13,13 +13,13 @@ class GraphTimeline extends React.Component {
             onNodeSelected: props.onNodeSelected,
             graph: props.graph,
             live: props.graph.finished == null,
-            selectedNode: null,
+            selectedStage: null,
             dependenciesOfSelected: new Set(),
             responseOfSelected: null,
             cursorTs: props.graph.created,
-            intervalTimer: -1
+            intervalTimer: -1,
         };
-        this.selectNode = this.selectNode.bind(this);
+        this.selectStage = this.selectStage.bind(this);
         this.updateScroll = this.updateScroll.bind(this);
 
         this.state.graph.On('model.GraphCompletedEvent', (evt) => {
@@ -42,10 +42,6 @@ class GraphTimeline extends React.Component {
     }
 
     updateScroll(ts) {
-        if (this.state.live) {
-            this.setLive(false);
-        }
-
         this.state.cursorTs = ts;
         this.setState(this.state);
 
@@ -68,36 +64,35 @@ class GraphTimeline extends React.Component {
     }
 
 
-    selectNode(node) {
-      if(node.call_id){
-        console.log(node.function_id);
-        let self = this;
-        let index = node.function_id.indexOf("/");
-        let appId = node.function_id.substring(0, index);
-        fetch(`http://localhost:8080/v1/apps/${appId}/calls/${node.call_id}/log`)
-        .then(
-          function(response) {
-            if (response.ok) {
-              console.log('Looks like there was a problem. Status Code: ' +
-              response.status);
-              return;
-            }
+    selectStage(stage) {
+        if (stage.call_id) {
+            console.log(stage.function_id);
+            let self = this;
+            let index = stage.function_id.indexOf("/");
+            let appId = stage.function_id.substring(0, index);
+            fetch(`http://localhost:8080/v1/apps/${appId}/calls/${stage.call_id}/log`)
+                .then(
+                    function (response) {
+                        if (response.ok) {
+                            console.log('Looks like there was a problem. Status Code: ' +
+                                response.status);
+                            return;
+                        }
 
-            response.json()
-              .then(function(data) {
-                self.state.responseOfSelected = data;
-              })
-              .catch(console.log);
-          }
-        )
-        .catch(function(err) {
-          console.log('Fetch Error :-S', err);
-        });
-      }
+                        response.json()
+                            .then(function (data) {
+                                self.state.responseOfSelected = data;
+                            })
+                            .catch(console.log);
+                    }
+                )
+                .catch(function (err) {
+                    console.log('Fetch Error :-S', err);
+                });
+        }
 
-        this.state.selectedNode = node;
-        this.state.onNodeSelected(this.state.graph, node);
-        this.setLive(false);
+        this.state.selectedStage = stage;
+        this.state.onNodeSelected(this.state.graph, stage);
         this.setState(this.state);
     }
 
@@ -125,7 +120,7 @@ class GraphTimeline extends React.Component {
     }
 
     render() {
-        let nodes = this.state.graph.getNodes();
+        let stages = this.state.graph.getNodes();
         //console.log(`graph timelines are ${this.state.graph.created} ->${minCreateTime}`);
         let startTs = this.state.graph.created;
 
@@ -135,17 +130,6 @@ class GraphTimeline extends React.Component {
             return (timeStamp - startTs) * pxPerMs;
         };
 
-        let findDeps = function (nodeId, depsMap) {
-          let depsOfNode = depsMap.get(nodeId);
-          if (depsOfNode.length === 0){
-            return new Set();
-          }
-          let transitiveDependenciesOfNode = new Set(depsOfNode);
-          depsOfNode.forEach((dep) => {
-            findDeps(dep, depsMap).forEach((transitiveDep) => transitiveDependenciesOfNode.add(transitiveDep));
-          })
-          return transitiveDependenciesOfNode;
-        };
 
         // main function elem
         let mainFnWidth;
@@ -173,74 +157,75 @@ class GraphTimeline extends React.Component {
         </div>);
 
         let pendingElems = [];
-        let nodeElements = [];
-        var dependencyMap = new Map();
+        let stageElems = [];
 
-        nodeElements.push(mainFnElem);
+        stageElems.push(mainFnElem);
 
-        nodes.forEach((node, idx) => {
-            let createPx = relativeX(node.created);
-            dependencyMap.set(node.stage_id, node.dependencies);
+        let highlightedStages = new Set();
+        if (this.state.selectedStage) {
+            highlightedStages = this.state.graph.findDepIds(this.state.selectedStage.stage_id);
+        }
 
-            var styleExtra = '';
-            switch (node.state) {
+        stages.forEach((stage, idx) => {
+            let createPx = relativeX(stage.created);
+
+            let css_classes = [];
+            switch (stage.state) {
                 case 'failed':
-                    styleExtra = styles.failed;
-                    if(this.state.dependenciesOfSelected.has(node.stage_id)) {
-                      styleExtra = styles.depfailed;
+                    css_classes.push(styles.failed);
+                    if (this.state.dependenciesOfSelected.has(stage.stage_id)) {
+                        css_classes = styles.depfailed;
                     }
                     break;
                 case 'successful':
-                    styleExtra = styles.successful;
-                    if(this.state.dependenciesOfSelected.has(node.stage_id)) {
-                      styleExtra = styles.depsuccess;
-                    }
+                    css_classes.push(styles.successful);
                     break;
                 case 'running':
-                    styleExtra = styles.running;
+                    css_classes.push(styles.running);
                     break;
                 case 'pending':
-                    styleExtra = styles.pending;
+                    css_classes.push(styles.pending);
                     break;
 
             }
 
-
-
-            if (this.state.selectedNode === node) {
-                this.state.dependenciesOfSelected = findDeps(node.stage_id, dependencyMap);
-                this.state.dependenciesOfSelected.add(node.stage_id);
+            if (this.state.selectedStage) {
+                if (this.state.selectedStage === stage) {
+                    css_classes.push(styles.selected);
+                }else if (highlightedStages.has(stage.stage_id)){
+                    css_classes.push(styles.highlighted);
+                }else{
+                    css_classes.push(styles.faded);
+                }
             }
-
-
-            const nodeHeight = 30;
 
 
             let deps = "";
-            if (node.dependencies.length !== 0) {
-                deps = "Dependencies: Stage " + node.dependencies;
+            if (stage.dependencies.length !== 0) {
+                deps = "Dependencies: Stage " + stage.dependencies;
             }
 
-            if (node.state === 'pending') {
+
+            if (stage.state === 'pending') {
                 let pendingboxStyle = {
                     position: 'absolute',
                     height: '20px',
                     top: '' + ((idx + 1) * this.state.nodeHeight) + 'px',
                 };
-                let pendElem = (<div key={node.stage_id + 1} className={styles.node + ' ' + styleExtra}
+                let pendElem = (<div key={stage.stage_id + 1} className={styles.node + ' ' + css_classes.join(' ')}
                                      style={pendingboxStyle}
-                                     onClick={(e) => this.selectNode(node)}
-                                     data-tooltip={node.op + ": " + node.state + "\n" + deps}
-                > {node.stage_id}:{node.op} </div>);
+                                     onClick={(e) => this.selectStage(stage)}
+                                     data-tooltip={stage.op + ": " + stage.state + "\n" + deps}
+                > {stage.stage_id}:{stage.op} </div>);
                 pendingElems.push(pendElem);
                 let waitElem = this.createWaitingElem(idx, this.state.nodeHeight, createPx, relativeX(Date.now()) - createPx);
-                nodeElements.push(<div key={node.stage_id + 1}>{waitElem}</div>);
+                stageElems.push(<div key={stage.stage_id + 1}>{waitElem}</div>);
 
             } else {
-                let startPx = relativeX(node.started);
-                let widthPx = (node.completed ? relativeX(node.completed) : relativeX(Date.now())) - relativeX(node.started);
-                let durationMs = node.completed ? node.completed - node.started : Date.now() - node.started;
-                let waitingTimePx = startPx - relativeX(node.created);
+                let startPx = relativeX(stage.started);
+                let widthPx = (stage.completed ? relativeX(stage.completed) : relativeX(Date.now())) - relativeX(stage.started);
+                let durationMs = stage.completed ? stage.completed - stage.started : Date.now() - stage.started;
+                let waitingTimePx = startPx - relativeX(stage.created);
                 let waitElem;
                 if (waitingTimePx > 10) {
                     waitElem = this.createWaitingElem(idx, this.state.nodeHeight, createPx, waitingTimePx);
@@ -253,13 +238,13 @@ class GraphTimeline extends React.Component {
                     top: '' + ((idx + 1) * this.state.nodeHeight) + 'px',
                     left: startPx
                 };
-                nodeElements.push(<div key={node.stage_id + 1}>
+                stageElems.push(<div key={stage.stage_id + 1}>
                         {waitElem}
-                        <div className={styles.node + ' ' + styleExtra}
+                        <div className={styles.node + ' ' + css_classes.join(' ')}
                              style={runboxStyle}
-                             onClick={(e) => this.selectNode(node)}
-                             data-tooltip={node.op + ": " + node.state + "\n" + deps}
-                        > {node.stage_id}:{node.op} {durationMs ? (durationMs.toFixed(0) + 'ms') : ""}</div>
+                             onClick={(e) => this.selectStage(stage)}
+                             data-tooltip={stage.op + ": " + stage.state + "\n" + deps}
+                        > {stage.stage_id}:{stage.op} {durationMs ? (durationMs.toFixed(0) + 'ms') : ""}</div>
                     </div>
                 );
             }
@@ -281,9 +266,9 @@ class GraphTimeline extends React.Component {
         return (
             <div>
                 <div className={styles.outerView}>
-                    <div className={styles.viewport}>
+                    <div className={styles.viewport} >
                         <div className={styles.innerViewport} id="innerViewport" style={thisStyle}>
-                            {nodeElements}
+                            {stageElems}
                         </div>
                     </div>
                     <div>{pendingElems}</div>
@@ -291,10 +276,10 @@ class GraphTimeline extends React.Component {
                 <ZoomLine graph={this.state.graph} windowDurationMs={1024 / pxPerMs} cursorTs={this.state.cursorTs}
                           maxTs={this.state.relativeTimestamp}
                           minScale={this.state.pxPerMs}
-                          onScrollChanged={this.updateScroll} width={1024}/>
-                        <div className={styles.nodeInfo}>
-                          {JSON.stringify(this.state.responseOfSelected)}
-                        </div>
+                          onScrollChanged={this.updateScroll} width={850}/>
+                <div className={styles.nodeInfo}>
+                    {JSON.stringify(this.state.responseOfSelected)}
+                </div>
             </div>
         );
     }

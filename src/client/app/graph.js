@@ -115,6 +115,19 @@ class Graph {
         return this.stage_map.get(id);
     }
 
+    findDepIds(nodeId) {
+        let depsOfNode = this.getNode(nodeId).dependencies;
+        if (depsOfNode.length === 0) {
+            return new Set();
+        }
+        let transitiveDependenciesOfNode = new Set(depsOfNode);
+        depsOfNode.forEach((dep) => {
+            this.findDepIds(dep).forEach((transitiveDep) => transitiveDependenciesOfNode.add(transitiveDep));
+        });
+
+        return transitiveDependenciesOfNode;
+    };
+
     getNodes() {
         return Array.from(this.stage_map.values());
     }

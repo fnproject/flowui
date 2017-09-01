@@ -34,11 +34,11 @@
 }
 
 .node.successful {
-    background-color: #ccffcc;
+    background-color: lightgreen;
 }
 
 .node.failed {
-    background-color: #ffcce0;
+    background-color: lightcoral;
 }
 
 @keyframes animatedBackground {
@@ -64,12 +64,12 @@
     box-shadow: 0 0 10px #9ecaed;
 }
 
-.node.depsuccess {
+.node.success.highlighted {
   background-color: #00ff00;
   border: 2px solid #00cc00;
 }
 
-.depfailed {
+.node.failed.highlighted {
   background-color: #ff0000;
   border: 2px solid #cc0000;
 }
@@ -95,6 +95,10 @@
     background-repeat: repeat;
 
     animation: animatedBackground 20s linear infinite;
+}
+
+.node.faded{
+    opacity: 0.2;
 }
 
 .node.mainfn {

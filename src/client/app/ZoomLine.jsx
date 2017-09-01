@@ -91,7 +91,7 @@ class ZoomLine extends React.Component {
         let lastPoint = [this.state.graph.created, 0];
         const maxTs = this.state.graph.finished ? this.state.graph.finished : Date.now();
 
-        console.log(linePoints);
+//        console.log(linePoints);
 
         linePoints.forEach((lp, idx) => {
             boxes.push([lastPoint[0], lp[0], lastPoint[1]]);
@@ -121,7 +121,7 @@ class ZoomLine extends React.Component {
                 width: relativeX(box[1]) - relativeX(box[0]) + 'px'
 
             };
-            return (<div data-tooltip={JSON.stringify(box)} key={i} className={styles.graphblock}
+            return (<div data-tooltip={box[2]} key={i} className={styles.graphblock}
                          style={estyle}></div> );
         });
 
@@ -136,7 +136,6 @@ class ZoomLine extends React.Component {
 
                 {elems}
             </div>
-            <pre>{JSON.stringify(boxes.map((a) => [a[0] - minTs, a[1], a[2]]))}</pre>
         </div>)
     }
 }
