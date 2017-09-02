@@ -4,41 +4,42 @@
   border: 3px solid black;
   width: 1024px;
   height: 300px;
+  background-color: #f9f9f9;
 }
 
 .viewport {
-    border-right: 1px solid black;
+    border-right: 3px solid black;
     height: 300px;
-    width: 850px;
+    width: 700px;
     overflow: hidden;
 }
 
-.innerViewport{
-    border-right: 1px dotted gray;
+.innerViewport {
   position: relative;
   height: 300px;
 }
 
 .nodeInfo {
   width: 1024px;
+  padding-top: 10px;
 }
 
 .node{
     border-radius: 3px;
-    border:1px solid darkcyan;
+    border:1px solid grey;
     margin:0px;
     cursor:pointer;
-    white-space: nowrap;
-    font-size:8pt;
-    box-shadow: 3px 3px 3px 0px rgba(0,0,0,0.45);
+    white-space: pre;
+    font-size:10pt;
+    box-shadow: 3px 3px 5px 0px rgba(0,0,0,0.25);
 }
 
 .node.successful {
-    background-color: lightgreen;
+    background-color: #ccffcc;
 }
 
 .node.failed {
-    background-color: lightcoral;
+    background-color: #ffcce0;
 }
 
 @keyframes animatedBackground {
@@ -55,7 +56,7 @@
 .hdepline {
     height:1px;
     border-top: 1px dashed lightgray;
-    z-index: -1;
+    z-index: 1;
 }
 
 .node.selected{
@@ -64,55 +65,42 @@
     box-shadow: 0 0 10px #9ecaed;
 }
 
-.node.success.highlighted {
+.node.depsuccess {
   background-color: #00ff00;
-  border: 2px solid #00cc00;
+  border: 1px solid #00cc00;
 }
 
-.node.failed.highlighted {
+.depfailed {
   background-color: #ff0000;
-  border: 2px solid #cc0000;
+  border: 1px solid #cc0000;
+}
+
+.node.notdep {
+  background-color: lightgrey;
 }
 
 .node.pending {
     position: relative;
-    left: 853px;
+    left: 703px;
     background-image: url('./stripe_pending.png');
     background-position: 0px 0px;
     background-repeat: repeat;
     z-index: 4;
-    margin-left: 5px;
-    animation: pendingappear  300ms ;
-
 }
 
 .node.running {
-    border-top-right-radius: 0px;
-    border-bottom-right-radius: 0px;
-
     background-image: url('./stripe_run.png');
     background-position: 0px 0px;
     background-repeat: repeat;
-
-    animation: animatedBackground 20s linear infinite;
+    animation: animatedBackground 30s linear infinite;
+    width: 1024px;
 }
 
-.node.faded{
-    opacity: 0.2;
-}
-
-.node.mainfn {
+.node.lifecycle {
   background-color: lightblue;
   background-position: 0px 0px;
-
 }
 
-.node.mainfn.running {
-    background-color: lightblue;
-    background-position: 0px 0px;
-    border-top-right-radius: 0px;
-    border-bottom-right-radius: 0px;
-}
 [data-tooltip] {
   position: relative;
   z-index: 4;

@@ -131,7 +131,7 @@ class ZoomLine extends React.Component {
                 position: 'relative',
                 width: this.state.width + 'px',
                 height: this.state.height + "px",
-                border: "1px solid black"
+                border: "3px solid black"
             }} className={styles.viewport}>
 
                 {elems}
