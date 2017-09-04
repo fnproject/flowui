@@ -87,9 +87,7 @@ class App extends React.Component {
                         {graphListItems}
                     </ul>
                 </div>
-                <div style={{position:'absolute',
-                  top:'50%', left:'50%',
-                margin: '-200px 0 0 -512px'}}>
+                <div style={{WebkitBoxAlign:'center', WebkitBoxPack:'center', display:'-webkit-box'}}>
                     {this.renderCurrentGraph()}
                 </div>
             </div>

@@ -76,8 +76,11 @@ class GraphTimeline extends React.Component {
 
             response.json()
               .then(function(data) {
-                let response = data;
-                self.state.responseOfSelected = JSON.stringify(data);
+                if (data.error) {
+                  self.state.responseOfSelected = "Error - " + data.error.message;
+                } else {
+                  self.state.responseOfSelected = JSON.stringify(data);
+                }
               })
               .catch(console.log);
           }
@@ -291,8 +294,9 @@ class GraphTimeline extends React.Component {
                 <ZoomLine graph={this.state.graph} windowDurationMs={1024 / pxPerMs} cursorTs={this.state.cursorTs}
                           maxTs={this.state.relativeTimestamp}
                           onScrollChanged={this.updateScroll} width={1024}/>
-                        <div className={styles.nodeInfo} style={{color:'grey'}}>
-                          {this.state.responseOfSelected}
+                        <div className={styles.nodeInfo} style={{color:'grey', display:'block'}}>
+                          Logs of event:
+                        <br/>{this.state.responseOfSelected}
                         </div>
             </div>
         );
