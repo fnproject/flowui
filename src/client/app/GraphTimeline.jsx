@@ -12,8 +12,6 @@ class GraphTimeline extends React.Component {
             graph: props.graph,
             live:  props.live,
             selectedNode: null,
-            nodeSelectionChanged: false,
-            dependenciesOfSelected: new Set(),
             relativeTimestamp: Date.now(),
             cursorTs: Date.now(),
             intervalTimer: -1,
@@ -62,7 +60,6 @@ class GraphTimeline extends React.Component {
     resetGraph() {
       this.state.selectedNode = null;
       this.state.dependenciesOfSelected = new Set();
-      this.state.nodeSelectionChanged = false;
       this.setState(this.state);
     }
 
@@ -100,7 +97,6 @@ class GraphTimeline extends React.Component {
       }
 
         this.state.selectedNode = node;
-        this.state.nodeSelectionChanged = true;
         this.state.onNodeSelected(this.state.graph, node);
         this.setLive(false);
         this.setState(this.state);
@@ -111,7 +107,7 @@ class GraphTimeline extends React.Component {
             position: 'absolute',
             height: '20px',
             width: 1,
-            top: '' + (idx * nodeHeight) + 'px',
+            top: '' + ((idx +1)* nodeHeight) + 'px',
             left: fromTs
         };
 
@@ -119,7 +115,7 @@ class GraphTimeline extends React.Component {
             position: 'absolute',
             width: duration + 'px',
             height: '1px',
-            top: '' + ((idx * nodeHeight) + nodeHeight / 2 - 5) + 'px',
+            top: '' + (((idx +1) * nodeHeight) + nodeHeight / 2 - 5) + 'px',
             left: fromTs
         };
 
@@ -144,17 +140,7 @@ class GraphTimeline extends React.Component {
             return (timeStamp - startTs) * pxPerMs;
         };
 
-        let findDeps = function (nodeId, depsMap) {
-          let depsOfNode = depsMap.get(nodeId);
-          if (depsOfNode.length === 0){
-            return new Set();
-          }
-          let transitiveDependenciesOfNode = new Set(depsOfNode);
-          depsOfNode.forEach((dep) => {
-            findDeps(dep, depsMap).forEach((transitiveDep) => transitiveDependenciesOfNode.add(transitiveDep));
-          })
-          return transitiveDependenciesOfNode;
-        }
+
 
         let lifeWidth;
         if (this.state.graph.main_ended !== null) {
@@ -186,39 +172,43 @@ class GraphTimeline extends React.Component {
 
         nodeElements.push(lifeElem);
 
+        var dependenciesOfSelected = new Set();
+        if(this.state.selectedNode){
+          dependenciesOfSelected = this.state.graph.findDepIds(this.state.selectedNode.stage_id);
+          dependenciesOfSelected.add(this.state.selectedNode.stage_id);
+        }
         nodes.forEach((node, idx) => {
             let createTs = relativeX(node.created);
             dependencyMap.set(node.stage_id, node.dependencies);
 
-            var styleExtra = '';
+            var styleExtra = [];
+            if(this.state.selectedNode){
+              if(dependenciesOfSelected.has(node.stage_id)) {
+                styleExtra.push(styles.highlighted);
+              } else {
+                styleExtra.push(styles.faded);
+              }
+            }
+
             switch (node.state) {
                 case 'failed':
-                    styleExtra = styles.failed;
-                    if(this.state.dependenciesOfSelected.has(node.stage_id)) {
-                      styleExtra = styles.depfailed;
-                    } else if(this.state.dependenciesOfSelected.size !== 0){
-                      styleExtra = styles.notdep;
-                    }
+                    styleExtra.push( styles.failed);
+
                     break;
                 case 'successful':
-                    styleExtra = styles.successful;
-                    if(this.state.dependenciesOfSelected.has(node.stage_id)) {
-                      styleExtra = styles.depsuccess;
-                    } else if(this.state.dependenciesOfSelected.size !== 0){
-                      styleExtra = styles.notdep;
-                    }
+                    styleExtra.push(styles.successful);
                     break;
                 case 'running':
-                    styleExtra = styles.running;
+                    styleExtra.push(styles.running);
                     break;
                 case 'pending':
-                    styleExtra = styles.pending;
+                    styleExtra.push(styles.pending);
                     break;
 
             }
 
             if (this.state.selectedNode === node) {
-                styleExtra += ' ' + styles.selected;
+                styleExtra.push(styles.selected);
             }
 
             const nodeHeight = 30;
@@ -234,7 +224,7 @@ class GraphTimeline extends React.Component {
                     height: '20px',
                     top: '' + ((idx + 1) * nodeHeight) + 'px',
                 };
-                let pendElem = (<div key={node.stage_id + 1} className={styles.node + ' ' + styleExtra}
+                let pendElem = (<div key={node.stage_id + 1} className={styles.node + ' ' + styleExtra.join(' ')}
                                      style={pendingboxStyle}
                                      onClick={(e) => this.selectNode(node)}
                                      data-tooltip={node.op + ": " + node.state + "\n" + deps}
@@ -262,7 +252,7 @@ class GraphTimeline extends React.Component {
                 };
                 nodeElements.push(<div key={node.stage_id + 1}>
                         {waitElem}
-                        <div className={styles.node + ' ' + styleExtra}
+                        <div className={styles.node + ' ' + styleExtra.join(' ')}
                              style={runboxStyle}
                              onClick={(e) => this.selectNode(node)}
                              data-tooltip={node.op + ": " + node.state + "\n" + deps}
@@ -272,10 +262,7 @@ class GraphTimeline extends React.Component {
             }
         });
 
-        if (this.state.nodeSelectionChanged) {
-            this.state.dependenciesOfSelected = findDeps(this.state.selectedNode.stage_id, dependencyMap);
-            this.state.dependenciesOfSelected.add(this.state.selectedNode.stage_id);
-        }
+
 
         let widthDiff = 850;
 

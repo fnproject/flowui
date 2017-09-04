@@ -65,18 +65,19 @@
     box-shadow: 0 0 10px #9ecaed;
 }
 
-.node.depsuccess {
+.node.successful.highlighted {
   background-color: #00ff00;
   border: 1px solid #00cc00;
 }
 
-.depfailed {
+.node.failed.highlighted {
   background-color: #ff0000;
   border: 1px solid #cc0000;
 }
 
-.node.notdep {
+.node.faded {
   background-color: lightgrey;
+  opacity: 0.3;
 }
 
 .node.pending {
