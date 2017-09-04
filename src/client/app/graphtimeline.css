@@ -101,6 +101,15 @@
   background-position: 0px 0px;
 }
 
+.resetButton {
+  background-color: lightgrey;
+  border: 1px solid white;
+  border-radius: 10px;
+  padding: 10px 10px;
+  text-align: center;
+  width: 200px;
+}
+
 [data-tooltip] {
   position: relative;
   z-index: 4;

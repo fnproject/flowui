@@ -12,6 +12,7 @@ class GraphTimeline extends React.Component {
             graph: props.graph,
             live:  props.live,
             selectedNode: null,
+            nodeSelectionChanged: false,
             dependenciesOfSelected: new Set(),
             relativeTimestamp: Date.now(),
             cursorTs: Date.now(),
@@ -58,6 +59,12 @@ class GraphTimeline extends React.Component {
         }
     }
 
+    resetGraph() {
+      this.state.selectedNode = null;
+      this.state.dependenciesOfSelected = new Set();
+      this.state.nodeSelectionChanged = false;
+      this.setState(this.state);
+    }
 
     selectNode(node) {
       if(node.call_id){
@@ -93,6 +100,7 @@ class GraphTimeline extends React.Component {
       }
 
         this.state.selectedNode = node;
+        this.state.nodeSelectionChanged = true;
         this.state.onNodeSelected(this.state.graph, node);
         this.setLive(false);
         this.setState(this.state);
@@ -209,16 +217,11 @@ class GraphTimeline extends React.Component {
 
             }
 
-
-
             if (this.state.selectedNode === node) {
-                this.state.dependenciesOfSelected = findDeps(node.stage_id, dependencyMap);
-                this.state.dependenciesOfSelected.add(node.stage_id);
+                styleExtra += ' ' + styles.selected;
             }
 
-
             const nodeHeight = 30;
-
 
             let deps = ""
             if (node.dependencies.length !== 0) {
@@ -269,6 +272,11 @@ class GraphTimeline extends React.Component {
             }
         });
 
+        if (this.state.nodeSelectionChanged) {
+            this.state.dependenciesOfSelected = findDeps(this.state.selectedNode.stage_id, dependencyMap);
+            this.state.dependenciesOfSelected.add(this.state.selectedNode.stage_id);
+        }
+
         let widthDiff = 850;
 
         let thisStyle;
@@ -283,6 +291,10 @@ class GraphTimeline extends React.Component {
 
         return (
             <div>
+              <div className={styles.resetButton}
+                onClick={(e) => this.resetGraph()}>
+                Reset Graph
+              </div>
                 <div className={styles.outerView}>
                     <div className={styles.viewport}>
                         <div className={styles.innerViewport} id="innerViewport" style={thisStyle}>
