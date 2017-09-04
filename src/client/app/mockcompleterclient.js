@@ -32,7 +32,7 @@ class MockCompleterClient {
             evt.data.ts = new Date(newTs).toISOString();
         })
 
-        const realTime = false;
+        const realTime = true;
 
         if (realTime) {
             function sendEvent() {
@@ -42,7 +42,7 @@ class MockCompleterClient {
                     const eventTs = Date.parse(next.data.ts);
 
                     if (eventTs <= nowTs) {
-                         console.log("sending Event", next.data.ts);
+                      //   console.log("sending Event", next.data.ts);
                         this.receiver(events.shift());
                     } else {
 

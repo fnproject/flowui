@@ -13,9 +13,10 @@ class GraphTimeline extends React.Component {
             live:  props.live,
             selectedNode: null,
             relativeTimestamp: Date.now(),
-            cursorTs: Date.now(),
+            cursorTs: props.graph.created,
             intervalTimer: -1,
-            responseOfSelected: null
+            responseOfSelected: null,
+            scrolling: false
         };
         this.selectNode = this.selectNode.bind(this);
         this.updateScroll = this.updateScroll.bind(this);
@@ -36,8 +37,11 @@ class GraphTimeline extends React.Component {
         if (this.state.live) {
             this.setLive(false);
         }
+        console.log("new scroll ",ts)
 
-        this.state.relativeTimestamp = ts;
+        //this.state.relativeTimestamp = ts;
+        this.state.scrolling = true;
+        this.state.cursorTs = ts;
         this.setState(this.state);
 
     }
@@ -46,7 +50,7 @@ class GraphTimeline extends React.Component {
         this.state.live = live;
         if (live) {
             this.state.intervalTimer = setInterval(()=>{
-                this.state.relativeTimestamp = this.state.cursorTs = Date.now();
+                this.state.relativeTimestamp = Date.now();
                 this.setState(this.state);
             },50);
         }else{
@@ -146,7 +150,7 @@ class GraphTimeline extends React.Component {
         if (this.state.graph.main_ended !== null) {
             lifeWidth = relativeX(this.state.graph.main_ended);
         } else {
-            lifeWidth = 1024;
+            lifeWidth = relativeX(Date.now()) - relativeX(this.state.graph.created);
         }
         let mainLifeStyle = {
             position: 'absolute',
@@ -235,7 +239,14 @@ class GraphTimeline extends React.Component {
 
             } else {
                 let startTs = relativeX(node.started);
-                let duration = relativeX(node.completed) - relativeX(node.started);
+                let duration;
+
+                if (node.completed){
+                    duration = relativeX(node.completed) - relativeX(node.started);
+                }else{
+                    duration = relativeX(Date.now()) - relativeX(node.started);
+
+                }
 
                 let waitingTime = startTs - createTs;
                 let waitElem;
@@ -262,19 +273,18 @@ class GraphTimeline extends React.Component {
             }
         });
 
-
+        // TODO: Remove magic numbers - note (700/0.06) corresponds to windowDurationMs in ZoomLine
+        const maxTs = this.state.graph.finished ? this.state.graph.finished : Date.now();
+        let  curDurationTs = (maxTs - this.state.graph.created);
+        if (curDurationTs > (700/0.06) && !this.state.scrolling){
+          this.state.cursorTs = this.state.graph.created + (curDurationTs - (700/0.06));
+        }
 
         let widthDiff = 850;
 
         let thisStyle;
 
-        if ((this.state.graph.finished < this.state.relativeTimestamp) && (this.state.graph.finished !== null)) {
-            let timePlus = relativeX(this.state.graph.finished) + 10;
-            thisStyle = {left: '0px', width: timePlus + 'px'};
-        } else {
-            widthDiff = widthDiff - (relativeX(this.state.relativeTimestamp));
-            thisStyle = {left: widthDiff, width: '1024px'};
-        }
+        thisStyle = {left: - relativeX(this.state.cursorTs)  +'px', width: '1024px'};
 
         return (
             <div>
@@ -290,9 +300,9 @@ class GraphTimeline extends React.Component {
                     </div>
                     <div>{pendingElems}</div>
                 </div>
-                <ZoomLine graph={this.state.graph} windowDurationMs={1024 / pxPerMs} cursorTs={this.state.cursorTs}
+                <ZoomLine graph={this.state.graph} windowDurationMs={700 / pxPerMs} cursorTs={this.state.cursorTs}
                           maxTs={this.state.relativeTimestamp}
-                          onScrollChanged={this.updateScroll} width={1024}/>
+                          onScrollChanged={this.updateScroll} width={700}/>
                         <div className={styles.nodeInfo} style={{color:'grey', display:'block'}}>
                           Logs of event:
                         <br/>{this.state.responseOfSelected}

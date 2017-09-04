@@ -93,6 +93,8 @@
     background-image: url('./stripe_run.png');
     background-position: 0px 0px;
     background-repeat: repeat;
+    border-top-right-radius: 0px;
+    border-bottom-right-radius: 0px;
     animation: animatedBackground 30s linear infinite;
     width: 1024px;
 }
@@ -100,6 +102,8 @@
 .node.lifecycle {
   background-color: lightblue;
   background-position: 0px 0px;
+  border-top-left-radius: 0px;
+  border-bottom-left-radius: 0px;
 }
 
 .resetButton {
