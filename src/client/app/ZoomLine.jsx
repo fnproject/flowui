@@ -31,6 +31,7 @@ class ZoomLine extends React.Component {
         this.state.windowDurationMs = props.windowDurationMs;
         this.state.maxTs = props.maxTs;
         this.state.cursorTs = props.cursorTs;
+        this.state.live = props.live;
 
         this.setState(this.state);
     }
@@ -75,7 +76,7 @@ class ZoomLine extends React.Component {
 
         this.state.onScrollChanged(newCursorTs);
         this.state.dragStartX = wmme.screenX;
-          //this.setState(this.state);
+          // this.setState(this.state);
 
       };
       listeners.moveListener = listeners.moveListener.bind(this);
@@ -200,10 +201,11 @@ class ZoomLine extends React.Component {
         };
 
         let leftPosition;
-        if(this.relativeX(Date.now()) < 700 && this.state.live){
-          leftPosition = {left:this.relativeX(Date.now())}
+
+        if(!this.state.live || this.state.graph.completed){
+          leftPosition = {left:this.relativeX(this.state.graph.completed) + 'px'};
         } else {
-          leftPosition = {opacity:0.0}
+          leftPosition = {left:this.relativeX(Date.now())};
         }
         // console.log("CursorTs: " + this.state.cursorTs + ", Start: " + this.state.graph.created);
         //console.log(linePoints);
@@ -212,7 +214,8 @@ class ZoomLine extends React.Component {
                 position: 'relative',
                 width: this.state.width + 'px',
                 height: this.state.height + "px",
-                border: "3px solid black"
+                border: "3px solid black",
+                borderTop: "0px"
             }} className={styles.viewport}>
                 {elems}
                 <div className={styles.scrollboxshade} style={leftShadeStyle}> </div>

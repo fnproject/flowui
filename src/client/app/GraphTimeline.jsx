@@ -10,7 +10,7 @@ class GraphTimeline extends React.Component {
         this.state = {
             onNodeSelected: props.onNodeSelected,
             graph: props.graph,
-            live: props.live,
+            live: true,
             selectedNode: null,
             relativeTimestamp: Date.now(),
             cursorTs: props.graph.created,
@@ -18,7 +18,9 @@ class GraphTimeline extends React.Component {
             responseOfSelected: null,
             scrolling: false,
             innerViewWidth:1024,
-            viewPortWidth: 700
+            viewPortWidth: 850,
+            height:300,
+            pxPerMs:0.06
         };
         this.selectNode = this.selectNode.bind(this);
         this.updateScroll = this.updateScroll.bind(this);
@@ -39,8 +41,6 @@ class GraphTimeline extends React.Component {
         if (this.state.live) {
             this.setLive(false);
         }
-        console.log("new scroll ", ts)
-
         //this.state.relativeTimestamp = ts;
         this.state.scrolling = true;
         this.state.cursorTs = ts;
@@ -63,13 +63,11 @@ class GraphTimeline extends React.Component {
         }
     }
 
-    resetGraph() {
-        this.state.selectedNode = null;
-        this.state.dependenciesOfSelected = new Set();
-        this.setState(this.state);
-    }
 
     selectNode(node) {
+      if(node === this.state.selectedNode){
+        node = null;
+      }
         this.state.selectedNode = node;
         this.state.onNodeSelected(this.state.graph, node);
         this.setLive(false);
@@ -107,11 +105,11 @@ class GraphTimeline extends React.Component {
 
 
         let startTs = this.state.graph.created;
-        let pxPerMs = 0.06;
+        let self = this;
 
         // converts a timestamp to a relative X in the display viewport
         let relativeX = function (timeStamp) {
-            return (timeStamp - startTs) * pxPerMs;
+            return (timeStamp - startTs) * self.state.pxPerMs;
         };
 
 
@@ -141,7 +139,7 @@ class GraphTimeline extends React.Component {
                                       position: 'absolute',
                                       height: '20px',
                                       top: '0px',
-                                      left: '706px',
+                                      left: (this.state.viewPortWidth + 6) + 'px',
                                       color: 'grey'
                                   }}
         > Pending Events: </div>)];
@@ -198,6 +196,7 @@ class GraphTimeline extends React.Component {
 
             if (node.state === 'pending') {
                 let pendingboxStyle = {
+                    left: (this.state.viewPortWidth + 3) + 'px',
                     position: 'absolute',
                     height: '20px',
                     top: '' + ((idx + 1) * nodeHeight) + 'px',
@@ -250,29 +249,22 @@ class GraphTimeline extends React.Component {
         // TODO: Remove magic numbers - note (700/0.06) corresponds to windowDurationMs in ZoomLine
         const maxTs = this.state.graph.finished ? this.state.graph.finished : Date.now();
         let curDurationTs = (maxTs - this.state.graph.created);
-        if (curDurationTs > (this.state.viewPortWidth / pxPerMs) && !this.state.scrolling) {
-            this.state.cursorTs = this.state.graph.created + (curDurationTs - (this.state.viewPortWidth / pxPerMs));
+        if (curDurationTs > (this.state.viewPortWidth / this.state.pxPerMs) && !this.state.scrolling) {
+            this.state.cursorTs = this.state.graph.created + (curDurationTs - (this.state.viewPortWidth / this.state.pxPerMs));
         }
 
         let leftPosition;
-        if(relativeX(Date.now()) < 700 && this.state.live){
-          leftPosition = {left:relativeX(Date.now())}
+        if((relativeX(Date.now()) < this.state.innerViewWidth) && this.state.live){
+          leftPosition = {left:relativeX(Date.now()), height: this.state.height + 'px'}
         } else {
-          leftPosition = {opacity:0.0}
+          leftPosition = {left:relativeX(this.state.graph.completed) + 'px', height: this.state.height + 'px'}
         }
-
-        let thisStyle = {left: -relativeX(this.state.cursorTs) + 'px', width: this.state.innerViewWidth + 'px'};
 
         return (
             <div>
-
-                <div className={styles.resetButton}
-                     onClick={(e) => this.resetGraph()}>
-                    Reset Graph
-                </div>
-                <div className={styles.outerView}>
-                    <div className={styles.viewport}>
-                        <div className={styles.innerViewport} id="innerViewport" style={thisStyle}>
+                <div className={styles.outerView} style={{width:this.state.innerViewWidth + 'px', height:this.state.height + 'px'}}>
+                    <div className={styles.viewport} style={{width:this.state.viewPortWidth + 'px', height:this.state.height + 'px'}}>
+                        <div className={styles.innerViewport} style={{left: -relativeX(this.state.cursorTs) + 'px', width: this.state.innerViewWidth + 'px', height: this.state.height + 'px'}}>
                           <div className={styles.currentLine} style={leftPosition}>
                             </div>
                             {nodeElements}
@@ -280,7 +272,7 @@ class GraphTimeline extends React.Component {
                     </div>
                     <div>{pendingElems}</div>
                 </div>
-                <ZoomLine graph={this.state.graph} windowDurationMs={this.state.viewPortWidth / pxPerMs} cursorTs={this.state.cursorTs}
+                <ZoomLine graph={this.state.graph} windowDurationMs={this.state.viewPortWidth / this.state.pxPerMs} cursorTs={this.state.cursorTs}
                           maxTs={this.state.relativeTimestamp}
                           live={this.state.live}
                           onScrollChanged={this.updateScroll} width={this.state.viewPortWidth}/>

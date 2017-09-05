@@ -2,28 +2,22 @@
 .outerView {
   position: relative;
   border: 3px solid black;
-  width: 1024px;
-  height: 300px;
   background-image: url('./pending_area.png');
 }
 
 .viewport {
     border-right: 3px solid black;
-    height: 300px;
-    width: 700px;
     overflow: hidden;
 }
 
 .innerViewport {
   position: relative;
-  height: 300px;
   background-color: #f9f9f9;
 }
 
 .currentLine{
   position: relative;
   top: 0px;
-  height: 300px;
   width: 4px;
   background-color: lightgrey;
 }
@@ -86,7 +80,6 @@
 
 .node.pending {
     position: relative;
-    left: 703px;
     background-image: url('./stripe_pending.png');
     background-position: 0px 0px;
     background-repeat: repeat;
@@ -108,15 +101,6 @@
   background-position: 0px 0px;
   border-top-left-radius: 0px;
   border-bottom-left-radius: 0px;
-}
-
-.resetButton {
-  background-color: lightgrey;
-  border: 1px solid white;
-  border-radius: 10px;
-  padding: 10px 10px;
-  text-align: center;
-  width: 200px;
 }
 
 [data-tooltip] {

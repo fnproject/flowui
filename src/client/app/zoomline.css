@@ -19,6 +19,7 @@
   height: 100px;
   width: 4px;
   background-color: grey;
+  z-index: 3;
 }
 
 .scrollbox {

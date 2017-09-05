@@ -73,7 +73,7 @@ class App extends React.Component {
         //console.log(graph);
         return (
             <div>
-                <GraphTimeline live={true} graph={graph} onNodeSelected={this.onNodeSelected}/>
+                <GraphTimeline graph={graph} onNodeSelected={this.onNodeSelected}/>
             </div>
         );
     }
@@ -95,9 +95,9 @@ class App extends React.Component {
 
 
     onNodeSelected(graph, node) {
+      this.state.currentNode = node;
+      if(node != null){
         console.log(`node ${graph.graph_id}: ${node.stage_id} selected`);
-
-        this.state.currentNode = node;
 
         if (node.call_id) {
             let index = node.function_id.indexOf("/");
@@ -105,17 +105,17 @@ class App extends React.Component {
             this.state.fnclient.loadLogs(appId, node.call_id)
                 .then((logs) => {
                     if (this.state.currentNode === node) {
-                        this.state.nodeLogs = logs;
-                        this.setState(this.state);
+                      this.state.nodeLogs = logs;
+                      this.setState(this.state);
                     }
                 }).catch((e) => {
                 if (this.state.currentNode === node) {
-                    this.state.nodeLogs = "error loading logs";
-                    this.setState(this.state);
+                  this.state.nodeLogs = "error loading logs";
+                  this.setState(this.state);
                 }
             });
         }
-
+      }
         this.setState(this.state);
     }
 

@@ -14,20 +14,22 @@ class FnClient {
      * @return a promise for log data as a string
      */
     loadLogs(app_id, call_id) {
+      let logs;
         return fetch(`${this.baseUrl}/v1/apps/${app_id}/calls/${call_id}/log`)
             .then(
                 function (response) {
-                    if (response.ok) {
+                    if (!response.ok) {
                         console.log('Looks like there was a problem. Status Code: ' +
                             response.status);
                         return;
                     }
 
-                    response.json()
+                    return response.json()
                         .then(function (data) {
                             if (data.error) {
                                 throw data.error.message;
                             } else {
+                              logs = data.log.log;
                                 return data.log.log;
                             }
                         });
