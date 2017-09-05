@@ -1,8 +1,12 @@
-require('file-loader?name=[name].[ext]!./index.html');
+import NodeDetail from "./NodeDetail.jsx";
 import React from 'react';
 import {render} from 'react-dom';
 import Controller from './controller.js';
 import GraphTimeline from './GraphTimeline.jsx';
+import FnClient from './fnclient.js';
+
+require('file-loader?name=[name].[ext]!./index.html');
+
 
 class App extends React.Component {
 
@@ -12,7 +16,10 @@ class App extends React.Component {
         this.state = {
             loadOnNew: true,
             currentGraph: null,
+            currentNode: null,
         };
+
+
         this.state.currentGraph = null;
         this.state.controller = new Controller((c) => {
             this.state.controller = c;
@@ -23,11 +30,14 @@ class App extends React.Component {
             }
         });
 
+        this.state.fnclient = new FnClient("http://localhost:8080");
+
+
         this.onGraphSelected = this.onGraphSelected.bind(this);
         this.renderCurrentGraph = this.renderCurrentGraph.bind(this);
+        this.renderCurrentNode = this.renderCurrentNode.bind(this);
         this.onNodeSelected = this.onNodeSelected.bind(this);
     }
-
 
 
     componentDidMount() {
@@ -38,6 +48,7 @@ class App extends React.Component {
         console.log(`selected graph ${graphId}`);
         this.state.currentGraph = graphId;
         this.state.controller.subscribe(graphId);
+        this.state.currentNode = null;
         this.setState(this.state);
 
     }
@@ -67,11 +78,48 @@ class App extends React.Component {
         );
     }
 
-    onNodeSelected(graph, node) {
-        console.log(`node ${graph.graph_id}: ${node.stage_id} selected`);
+
+    renderCurrentNode() {
+        if (this.state.currentNode == null) {
+            return (
+                <div></div>
+            );
+        }
+
+        return (
+            <div>
+                <NodeDetail node={this.state.currentNode} nodeLog={this.state.nodeLogs}/>
+            </div>
+        );
     }
 
-// Please note this currently only works for the first graph you create
+
+    onNodeSelected(graph, node) {
+        console.log(`node ${graph.graph_id}: ${node.stage_id} selected`);
+
+        this.state.currentNode = node;
+
+        if (node.call_id) {
+            let index = node.function_id.indexOf("/");
+            let appId = node.function_id.substring(0, index);
+            this.state.fnclient.loadLogs(appId, node.call_id)
+                .then((logs) => {
+                    if (this.state.currentNode === node) {
+                        this.state.nodeLogs = logs;
+                        this.setState(this.state);
+                    }
+                }).catch((e) => {
+                if (this.state.currentNode === node) {
+                    this.state.nodeLogs = "error loading logs";
+                    this.setState(this.state);
+                }
+            });
+        }
+
+        this.setState(this.state);
+    }
+
+    // Please note this currently only works for the first graph you create
     render() {
         var graphListItems = [];
         this.state.controller.getKnownGraphs().forEach((graph) => {
@@ -87,9 +135,13 @@ class App extends React.Component {
                         {graphListItems}
                     </ul>
                 </div>
-                <div style={{WebkitBoxAlign:'center', WebkitBoxPack:'center', display:'-webkit-box'}}>
+                <div style={{WebkitBoxAlign: 'center', WebkitBoxPack: 'center', display: '-webkit-box'}}>
                     {this.renderCurrentGraph()}
                 </div>
+                <div style={{WebkitBoxAlign: 'center', WebkitBoxPack: 'center', display: '-webkit-box'}}>
+                    {this.renderCurrentNode()}
+                </div>
+
             </div>
         );
     }

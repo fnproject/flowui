@@ -10,18 +10,19 @@ class GraphTimeline extends React.Component {
         this.state = {
             onNodeSelected: props.onNodeSelected,
             graph: props.graph,
-            live:  props.live,
+            live: props.live,
             selectedNode: null,
             relativeTimestamp: Date.now(),
             cursorTs: props.graph.created,
             intervalTimer: -1,
             responseOfSelected: null,
-            scrolling: false
+            scrolling: false,
+            width:1024
         };
         this.selectNode = this.selectNode.bind(this);
         this.updateScroll = this.updateScroll.bind(this);
 
-        this.state.graph.On('model.GraphCompletedEvent',(evt)=>{
+        this.state.graph.On('model.GraphCompletedEvent', (evt) => {
             console.log("Graph completed");
             this.setLive(false);
         });
@@ -37,7 +38,7 @@ class GraphTimeline extends React.Component {
         if (this.state.live) {
             this.setLive(false);
         }
-        console.log("new scroll ",ts)
+        console.log("new scroll ", ts)
 
         //this.state.relativeTimestamp = ts;
         this.state.scrolling = true;
@@ -49,12 +50,12 @@ class GraphTimeline extends React.Component {
     setLive(live) {
         this.state.live = live;
         if (live) {
-            this.state.intervalTimer = setInterval(()=>{
+            this.state.intervalTimer = setInterval(() => {
                 this.state.relativeTimestamp = Date.now();
                 this.setState(this.state);
-            },50);
-        }else{
-            if(this.state.intervalTimer> 0){
+            }, 50);
+        } else {
+            if (this.state.intervalTimer > 0) {
                 clearTimeout(this.state.intervalTimer);
                 this.state.intervalTimer = null;
             }
@@ -62,44 +63,12 @@ class GraphTimeline extends React.Component {
     }
 
     resetGraph() {
-      this.state.selectedNode = null;
-      this.state.dependenciesOfSelected = new Set();
-      this.setState(this.state);
+        this.state.selectedNode = null;
+        this.state.dependenciesOfSelected = new Set();
+        this.setState(this.state);
     }
 
     selectNode(node) {
-      if(node.call_id){
-        console.log(node.function_id);
-        let self = this;
-        let index = node.function_id.indexOf("/");
-        let appId = node.function_id.substring(0, index);
-        fetch(`http://localhost:8080/v1/apps/${appId}/calls/${node.call_id}/log`)
-        .then(
-          function(response) {
-            if (response.ok) {
-              console.log('Looks like there was a problem. Status Code: ' +
-              response.status);
-              return;
-            }
-
-            response.json()
-              .then(function(data) {
-                if (data.error) {
-                  self.state.responseOfSelected = "Error - " + data.error.message;
-                } else {
-                  self.state.responseOfSelected = JSON.stringify(data);
-                }
-              })
-              .catch(console.log);
-          }
-        )
-        .catch(function(err) {
-          console.log('Fetch Error :-S', err);
-        });
-      } else {
-        this.state.responseOfSelected = "This event is not an external call";
-      }
-
         this.state.selectedNode = node;
         this.state.onNodeSelected(this.state.graph, node);
         this.setLive(false);
@@ -111,7 +80,7 @@ class GraphTimeline extends React.Component {
             position: 'absolute',
             height: '20px',
             width: 1,
-            top: '' + ((idx +1)* nodeHeight) + 'px',
+            top: '' + ((idx + 1) * nodeHeight) + 'px',
             left: fromTs
         };
 
@@ -119,7 +88,7 @@ class GraphTimeline extends React.Component {
             position: 'absolute',
             width: duration + 'px',
             height: '1px',
-            top: '' + (((idx +1) * nodeHeight) + nodeHeight / 2 - 5) + 'px',
+            top: '' + (((idx + 1) * nodeHeight) + nodeHeight / 2 - 5) + 'px',
             left: fromTs
         };
 
@@ -145,7 +114,6 @@ class GraphTimeline extends React.Component {
         };
 
 
-
         let lifeWidth;
         if (this.state.graph.main_ended !== null) {
             lifeWidth = relativeX(this.state.graph.main_ended);
@@ -168,7 +136,13 @@ class GraphTimeline extends React.Component {
         </div>);
 
         let pendingElems = [(<div key='0'
-        style={{position:'absolute', height:'20px', top:'0px', left:'706px', color:'grey'}}
+                                  style={{
+                                      position: 'absolute',
+                                      height: '20px',
+                                      top: '0px',
+                                      left: '706px',
+                                      color: 'grey'
+                                  }}
         > Pending Events: </div>)];
 
         let nodeElements = [];
@@ -177,26 +151,26 @@ class GraphTimeline extends React.Component {
         nodeElements.push(lifeElem);
 
         var dependenciesOfSelected = new Set();
-        if(this.state.selectedNode){
-          dependenciesOfSelected = this.state.graph.findDepIds(this.state.selectedNode.stage_id);
-          dependenciesOfSelected.add(this.state.selectedNode.stage_id);
+        if (this.state.selectedNode) {
+            dependenciesOfSelected = this.state.graph.findDepIds(this.state.selectedNode.stage_id);
+            dependenciesOfSelected.add(this.state.selectedNode.stage_id);
         }
         nodes.forEach((node, idx) => {
             let createTs = relativeX(node.created);
             dependencyMap.set(node.stage_id, node.dependencies);
 
             var styleExtra = [];
-            if(this.state.selectedNode){
-              if(dependenciesOfSelected.has(node.stage_id)) {
-                styleExtra.push(styles.highlighted);
-              } else {
-                styleExtra.push(styles.faded);
-              }
+            if (this.state.selectedNode) {
+                if (dependenciesOfSelected.has(node.stage_id)) {
+                    styleExtra.push(styles.highlighted);
+                } else {
+                    styleExtra.push(styles.faded);
+                }
             }
 
             switch (node.state) {
                 case 'failed':
-                    styleExtra.push( styles.failed);
+                    styleExtra.push(styles.failed);
 
                     break;
                 case 'successful':
@@ -241,9 +215,9 @@ class GraphTimeline extends React.Component {
                 let startTs = relativeX(node.started);
                 let duration;
 
-                if (node.completed){
+                if (node.completed) {
                     duration = relativeX(node.completed) - relativeX(node.started);
-                }else{
+                } else {
                     duration = relativeX(Date.now()) - relativeX(node.started);
 
                 }
@@ -275,23 +249,23 @@ class GraphTimeline extends React.Component {
 
         // TODO: Remove magic numbers - note (700/0.06) corresponds to windowDurationMs in ZoomLine
         const maxTs = this.state.graph.finished ? this.state.graph.finished : Date.now();
-        let  curDurationTs = (maxTs - this.state.graph.created);
-        if (curDurationTs > (700/0.06) && !this.state.scrolling){
-          this.state.cursorTs = this.state.graph.created + (curDurationTs - (700/0.06));
+        let curDurationTs = (maxTs - this.state.graph.created);
+        if (curDurationTs > (700 / 0.06) && !this.state.scrolling) {
+            this.state.cursorTs = this.state.graph.created + (curDurationTs - (700 / 0.06));
         }
 
         let widthDiff = 850;
 
         let thisStyle;
 
-        thisStyle = {left: - relativeX(this.state.cursorTs)  +'px', width: '1024px'};
+        thisStyle = {left: -relativeX(this.state.cursorTs) + 'px', width: this.state.width + 'px'};
 
         return (
             <div>
-              <div className={styles.resetButton}
-                onClick={(e) => this.resetGraph()}>
-                Reset Graph
-              </div>
+                <div className={styles.resetButton}
+                     onClick={(e) => this.resetGraph()}>
+                    Reset Graph
+                </div>
                 <div className={styles.outerView}>
                     <div className={styles.viewport}>
                         <div className={styles.innerViewport} id="innerViewport" style={thisStyle}>
@@ -303,10 +277,6 @@ class GraphTimeline extends React.Component {
                 <ZoomLine graph={this.state.graph} windowDurationMs={700 / pxPerMs} cursorTs={this.state.cursorTs}
                           maxTs={this.state.relativeTimestamp}
                           onScrollChanged={this.updateScroll} width={700}/>
-                        <div className={styles.nodeInfo} style={{color:'grey', display:'block'}}>
-                          Logs of event:
-                        <br/>{this.state.responseOfSelected}
-                        </div>
             </div>
         );
     }
