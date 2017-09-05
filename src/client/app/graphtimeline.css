@@ -4,7 +4,7 @@
   border: 3px solid black;
   width: 1024px;
   height: 300px;
-  background-color: #f9f9f9;
+  background-image: url('./pending_area.png');
 }
 
 .viewport {
@@ -17,8 +17,16 @@
 .innerViewport {
   position: relative;
   height: 300px;
+  background-color: #f9f9f9;
 }
 
+.currentLine{
+  position: relative;
+  top: 0px;
+  height: 300px;
+  width: 4px;
+  background-color: lightgrey;
+}
 
 .node{
     border-radius: 3px;

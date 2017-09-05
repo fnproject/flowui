@@ -15,6 +15,7 @@ class ZoomLine extends React.Component {
             onScrollChanged: props.onScrollChanged,
             graph: props.graph,
             width: props.width,
+            live: props.live,
             minScale: props.minScale,
             dragging:false,
             dragStartX: 0,
@@ -198,6 +199,12 @@ class ZoomLine extends React.Component {
           height: this.state.height + 'px'
         };
 
+        let leftPosition;
+        if(this.relativeX(Date.now()) < 700 && this.state.live){
+          leftPosition = {left:this.relativeX(Date.now())}
+        } else {
+          leftPosition = {opacity:0.0}
+        }
         // console.log("CursorTs: " + this.state.cursorTs + ", Start: " + this.state.graph.created);
         //console.log(linePoints);
         return (<div>
@@ -207,12 +214,12 @@ class ZoomLine extends React.Component {
                 height: this.state.height + "px",
                 border: "3px solid black"
             }} className={styles.viewport}>
-
                 {elems}
                 <div className={styles.scrollboxshade} style={leftShadeStyle}> </div>
                 <div  onMouseDown={this.onDragStart} className={styles.scrollbox} style={{height: this.state.height + "px", left:this.relativeX(this.state.cursorTs)+ 'px', width:scrollBoxWidthPx + 'px'}}> </div>
                   <div className={styles.scrollboxshade} style={rightShadeStyle}> </div>
-
+                    <div className={styles.currentLine} style={leftPosition}>
+                      </div>
             </div>
         </div>)
     }

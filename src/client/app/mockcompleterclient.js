@@ -32,7 +32,7 @@ class MockCompleterClient {
             evt.data.ts = new Date(newTs).toISOString();
         })
 
-        const realTime = false;
+        const realTime = true;
 
         if (realTime) {
             function sendEvent() {

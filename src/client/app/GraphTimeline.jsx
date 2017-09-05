@@ -17,7 +17,8 @@ class GraphTimeline extends React.Component {
             intervalTimer: -1,
             responseOfSelected: null,
             scrolling: false,
-            width:1024
+            innerViewWidth:1024,
+            viewPortWidth: 700
         };
         this.selectNode = this.selectNode.bind(this);
         this.updateScroll = this.updateScroll.bind(this);
@@ -171,7 +172,6 @@ class GraphTimeline extends React.Component {
             switch (node.state) {
                 case 'failed':
                     styleExtra.push(styles.failed);
-
                     break;
                 case 'successful':
                     styleExtra.push(styles.successful);
@@ -250,18 +250,22 @@ class GraphTimeline extends React.Component {
         // TODO: Remove magic numbers - note (700/0.06) corresponds to windowDurationMs in ZoomLine
         const maxTs = this.state.graph.finished ? this.state.graph.finished : Date.now();
         let curDurationTs = (maxTs - this.state.graph.created);
-        if (curDurationTs > (700 / 0.06) && !this.state.scrolling) {
-            this.state.cursorTs = this.state.graph.created + (curDurationTs - (700 / 0.06));
+        if (curDurationTs > (this.state.viewPortWidth / pxPerMs) && !this.state.scrolling) {
+            this.state.cursorTs = this.state.graph.created + (curDurationTs - (this.state.viewPortWidth / pxPerMs));
         }
 
-        let widthDiff = 850;
+        let leftPosition;
+        if(relativeX(Date.now()) < 700 && this.state.live){
+          leftPosition = {left:relativeX(Date.now())}
+        } else {
+          leftPosition = {opacity:0.0}
+        }
 
-        let thisStyle;
-
-        thisStyle = {left: -relativeX(this.state.cursorTs) + 'px', width: this.state.width + 'px'};
+        let thisStyle = {left: -relativeX(this.state.cursorTs) + 'px', width: this.state.innerViewWidth + 'px'};
 
         return (
             <div>
+
                 <div className={styles.resetButton}
                      onClick={(e) => this.resetGraph()}>
                     Reset Graph
@@ -269,14 +273,17 @@ class GraphTimeline extends React.Component {
                 <div className={styles.outerView}>
                     <div className={styles.viewport}>
                         <div className={styles.innerViewport} id="innerViewport" style={thisStyle}>
+                          <div className={styles.currentLine} style={leftPosition}>
+                            </div>
                             {nodeElements}
                         </div>
                     </div>
                     <div>{pendingElems}</div>
                 </div>
-                <ZoomLine graph={this.state.graph} windowDurationMs={700 / pxPerMs} cursorTs={this.state.cursorTs}
+                <ZoomLine graph={this.state.graph} windowDurationMs={this.state.viewPortWidth / pxPerMs} cursorTs={this.state.cursorTs}
                           maxTs={this.state.relativeTimestamp}
-                          onScrollChanged={this.updateScroll} width={700}/>
+                          live={this.state.live}
+                          onScrollChanged={this.updateScroll} width={this.state.viewPortWidth}/>
             </div>
         );
     }
