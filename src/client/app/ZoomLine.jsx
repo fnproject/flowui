@@ -19,6 +19,7 @@ class ZoomLine extends React.Component {
             minScale: props.minScale,
             dragging:false,
             dragStartX: 0,
+            stopped: false,
             height: 100
         };
         this.onDragStart = this.onDragStart.bind(this);
@@ -32,6 +33,7 @@ class ZoomLine extends React.Component {
         this.state.maxTs = props.maxTs;
         this.state.cursorTs = props.cursorTs;
         this.state.live = props.live;
+        this.state.graph = props.graph;
 
         this.setState(this.state);
     }
@@ -46,6 +48,7 @@ class ZoomLine extends React.Component {
       if (curDurationTs < this.state.windowDurationMs){
         return (timeStamp - minTs) * this.state.width/(this.state.windowDurationMs);
       }else {
+        this.state.stopped = true;
         return (timeStamp - minTs) * this.state.width/curDurationTs;
       }
     }
@@ -201,11 +204,12 @@ class ZoomLine extends React.Component {
         };
 
         let leftPosition;
-
-        if(!this.state.live || this.state.graph.completed){
-          leftPosition = {left:this.relativeX(this.state.graph.completed) + 'px'};
-        } else {
+        if(this.state.stopped){
+          leftPosition = {visibility:'hidden'};
+        } else if(!this.state.graph.completed){
           leftPosition = {left:this.relativeX(Date.now())};
+        } else {
+          leftPosition = {visibility:'hidden'};
         }
         // console.log("CursorTs: " + this.state.cursorTs + ", Start: " + this.state.graph.created);
         //console.log(linePoints);

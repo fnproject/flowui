@@ -7,7 +7,8 @@
 
 .viewport {
     border-right: 3px solid black;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .innerViewport {

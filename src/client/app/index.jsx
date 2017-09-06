@@ -70,10 +70,14 @@ class App extends React.Component {
                 </div>
             );
         }
-        //console.log(graph);
+
+        let live = true;
+        if(graph.completed){
+          live = false;
+        }
         return (
             <div>
-                <GraphTimeline graph={graph} onNodeSelected={this.onNodeSelected}/>
+                <GraphTimeline graph={graph} onNodeSelected={this.onNodeSelected} live={live}/>
             </div>
         );
     }
@@ -88,7 +92,7 @@ class App extends React.Component {
 
         return (
             <div>
-                <NodeDetail node={this.state.currentNode} nodeLog={this.state.nodeLogs}/>
+                <NodeDetail node={this.state.currentNode} nodeLogs={this.state.nodeLogs}/>
             </div>
         );
     }
@@ -96,52 +100,63 @@ class App extends React.Component {
 
     onNodeSelected(graph, node) {
       this.state.currentNode = node;
+
       if(node != null){
+        let deps = graph.findDepIds(node.stage_id);
+        deps.add(node.stage_id);
         console.log(`node ${graph.graph_id}: ${node.stage_id} selected`);
 
-        if (node.call_id) {
-            let index = node.function_id.indexOf("/");
-            let appId = node.function_id.substring(0, index);
-            this.state.fnclient.loadLogs(appId, node.call_id)
-                .then((logs) => {
-                    if (this.state.currentNode === node) {
-                      this.state.nodeLogs = logs;
-                      this.setState(this.state);
-                    }
-                }).catch((e) => {
-                if (this.state.currentNode === node) {
-                  this.state.nodeLogs = "error loading logs";
-                  this.setState(this.state);
-                }
-            });
+        this.state.nodeLogs = [];
+        for(let item of deps){
+          let nodeDep = graph.getNode(item);
+          if (nodeDep.call_id) {
+              let index = nodeDep.function_id.indexOf("/");
+              let appId = nodeDep.function_id.substring(0, index);
+              this.state.fnclient.loadLogs(appId, nodeDep.call_id)
+                  .then((logs) => {
+                        if(logs != ""){
+                          this.state.nodeLogs.push(logs);
+                          this.setState(this.state);
+                        }
+                  }).catch((e) => {
+                    console.log("error loading logs: " + e.message);
+              })
         }
-      }
-        this.setState(this.state);
+        }
+          this.setState(this.state);
+        }
+
+
     }
 
     // Please note this currently only works for the first graph you create
     render() {
         var graphListItems = [];
         this.state.controller.getKnownGraphs().forEach((graph) => {
-            graphListItems.push(<li key={graph.data.graph_id}><a href="#"
-                                                                 onClick={() => this.onGraphSelected(graph.data.graph_id)}>{graph.data.function_id} {graph.data.graph_id}</a>
-            </li>);
+          let elem = (<div key={graph.data.graph_id}
+                           style={{padding:'10px', textAlign:'center',
+                           borderBottom: '3px double #CCCCCC'}}>
+                           <a href="#"
+                              onClick={() => this.onGraphSelected(graph.data.graph_id)}>{graph.data.function_id} {graph.data.graph_id}</a>
+
+                     </div>);
+            graphListItems.push(elem);
         });
 
         return (
             <div>
-                <div>
-                    <ul>
-                        {graphListItems}
-                    </ul>
-                </div>
+              <div style={{position:'absolute', minHeight:'1000px', top:'0px', left:'0px',
+                 backgroundColor:'lightgrey', width:'400px', padding:'10px',}}>
+                 {graphListItems}
+              </div>
+              <div>
                 <div style={{WebkitBoxAlign: 'center', WebkitBoxPack: 'center', display: '-webkit-box'}}>
                     {this.renderCurrentGraph()}
                 </div>
-                <div style={{WebkitBoxAlign: 'center', WebkitBoxPack: 'center', display: '-webkit-box'}}>
+                <div style={{WebkitBoxAlign: 'center', WebkitBoxPack: 'center', display: '-webkit-box', height:'400px'}}>
                     {this.renderCurrentNode()}
                 </div>
-
+              </div>
             </div>
         );
     }

@@ -10,7 +10,7 @@ class GraphTimeline extends React.Component {
         this.state = {
             onNodeSelected: props.onNodeSelected,
             graph: props.graph,
-            live: true,
+            live: props.live,
             selectedNode: null,
             relativeTimestamp: Date.now(),
             cursorTs: props.graph.created,
@@ -20,15 +20,27 @@ class GraphTimeline extends React.Component {
             innerViewWidth:1024,
             viewPortWidth: 850,
             height:300,
-            pxPerMs:0.06
+            pxPerMs:0.06,
+            wallPaperWidth:30000
         };
         this.selectNode = this.selectNode.bind(this);
         this.updateScroll = this.updateScroll.bind(this);
+        //
+        // this.state.graph.On('model.GraphCompletedEvent', (evt) => {
+        //     console.log("Graph completed");
+        //     this.setLive(false);
+        // });
+    }
 
-        this.state.graph.On('model.GraphCompletedEvent', (evt) => {
-            console.log("Graph completed");
-            this.setLive(false);
-        });
+    componentWillReceiveProps(props) {
+      Object.assign(this.state,{
+        onNodeSelected: props.onNodeSelected,
+        graph: props.graph,
+        live: props.live,
+        relativeTimestamp: Date.now(),
+        cursorTs: props.graph.created,
+      });
+      this.setState(this.state);
     }
 
     componentDidMount() {
@@ -255,7 +267,7 @@ class GraphTimeline extends React.Component {
         }
 
         let leftPosition;
-        if((relativeX(Date.now()) < this.state.innerViewWidth) && this.state.live){
+        if((relativeX(Date.now()) < this.state.wallPaperWidth) && this.state.live){
           leftPosition = {left:relativeX(Date.now()), height: this.state.height + 'px'}
         } else {
           leftPosition = {left:relativeX(this.state.graph.completed) + 'px', height: this.state.height + 'px'}
@@ -265,7 +277,7 @@ class GraphTimeline extends React.Component {
             <div>
                 <div className={styles.outerView} style={{width:this.state.innerViewWidth + 'px', height:this.state.height + 'px'}}>
                     <div className={styles.viewport} style={{width:this.state.viewPortWidth + 'px', height:this.state.height + 'px'}}>
-                        <div className={styles.innerViewport} style={{left: -relativeX(this.state.cursorTs) + 'px', width: this.state.innerViewWidth + 'px', height: this.state.height + 'px'}}>
+                        <div className={styles.innerViewport} style={{left: -relativeX(this.state.cursorTs) + 'px', width:this.state.wallPaperWidth + 'px', height: '500px'}}>
                           <div className={styles.currentLine} style={leftPosition}>
                             </div>
                             {nodeElements}

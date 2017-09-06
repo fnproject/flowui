@@ -1,7 +1,21 @@
 
-.logpane {
-    width:600px;
-    background-color: black;
-    color:white;
-    font-family: "American Typewriter";
+.console {
+  font-family: Courier;
+  color: #CCCCCC;
+  background: #000000;
+  border: 3px double #CCCCCC;
+  padding: 10px;
+  overflow: auto;
+  white-space: pre-wrap;
+  flex: 1;
+  margin: 10px;
+  margin-left: 0px;
+  margin-right: 0px;
+  z-index: 2;
+}
+
+.nodeInfo {
+  margin: 10px;
+  flex: 1;
+  flex-wrap: wrap;
 }
