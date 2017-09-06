@@ -10,12 +10,12 @@ class Controller {
         this.known_graphs = new Set();
         this.active_graphs = new Map();
 
-        this.client = new MockCompleterClient((e) => {
-            this.receiveEvent(e);
-        });
-        // this.client = new CompleterWsClient((e) => {
+        // this.client = new MockCompleterClient((e) => {
         //     this.receiveEvent(e);
         // });
+        this.client = new CompleterWsClient((e) => {
+            this.receiveEvent(e);
+        });
         this.on_changed = onChanged;
         this.debounce_timeout = null;
 

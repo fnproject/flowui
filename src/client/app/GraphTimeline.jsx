@@ -212,13 +212,14 @@ class GraphTimeline extends React.Component {
 
             } else {
                 let startTs = relativeX(node.started);
-                let duration;
-
+                let widthPx;
+                let durationMs;
                 if (node.completed) {
-                    duration = relativeX(node.completed) - relativeX(node.started);
+                    widthPx = relativeX(node.completed) - relativeX(node.started);
+                    durationMs = node.completed - node.started;
                 } else {
-                    duration = relativeX(Date.now()) - relativeX(node.started);
-
+                    widthPx = relativeX(Date.now()) - relativeX(node.started);
+                    durationMs = Date.now() - node.started;
                 }
 
                 let waitingTime = startTs - createTs;
@@ -230,7 +231,7 @@ class GraphTimeline extends React.Component {
                 let runboxStyle = {
                     position: 'absolute',
                     height: '20px',
-                    width: '' + duration + 'px',
+                    width: '' + widthPx + 'px',
                     top: '' + ((idx + 1) * nodeHeight) + 'px',
                     left: startTs
                 };
@@ -240,7 +241,7 @@ class GraphTimeline extends React.Component {
                              style={runboxStyle}
                              onClick={(e) => this.selectNode(node)}
                              data-tooltip={node.op + ": " + node.state + "\n" + deps}
-                        > {node.stage_id}: {node.op} {duration ? (duration.toFixed(0) + 'ms') : ""}</div>
+                        > {node.stage_id}: {node.op} {durationMs ? (durationMs.toFixed(0) + 'ms') : ""}</div>
                     </div>
                 );
             }
