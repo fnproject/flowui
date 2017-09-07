@@ -24,10 +24,17 @@ class GraphTimeline extends React.Component {
             wallPaperWidth:30000,
             wallPaperHeight:5000,
             currentlyRunning: null,
-            heightToMove: 0
+            heightToMove: 0,
+            dragging: false,
+            dragStartY: 0,
+            scrollPosition: 0,
+            scrollBarHeight: 300,
+            hasMoved: false
         };
         this.selectNode = this.selectNode.bind(this);
         this.updateScroll = this.updateScroll.bind(this);
+        this.updateScrollY = this.updateScrollY.bind(this);
+        this.onDragStart = this.onDragStart.bind(this);
         //
         // this.state.graph.On('model.GraphCompletedEvent', (evt) => {
         //     console.log("Graph completed");
@@ -60,7 +67,16 @@ class GraphTimeline extends React.Component {
         this.state.scrolling = true;
         this.state.cursorTs = ts;
         this.setState(this.state);
+    }
 
+    updateScrollY(s) {
+      if (this.state.live) {
+          this.setLive(false);
+      }
+      //this.state.relativeTimestamp = ts;
+      this.state.scrolling = true;
+      this.state.scrollPosition = s;
+      this.setState(this.state);
     }
 
     setLive(live) {
@@ -110,6 +126,37 @@ class GraphTimeline extends React.Component {
             <div className={styles.createnode} style={createboxStyle}>&nbsp;</div>
             <div className={styles.hdepline} style={depLineStyle}>&nbsp;</div>
         </div>);
+    }
+
+    onDragStart(e){
+      this.state.dragging = true;
+      this.state.hasMoved = true;
+      this.state.dragStartY = e.screenY;
+      let listeners = {};
+      listeners.moveListener = (wmme) => {
+        let deltaY = wmme.screenY - this.state.dragStartY;
+        let minScrollPosition = 0;
+        let maxScrollPosition = this.state.height - this.state.scrollBarHeight;
+
+        let newScrollPosition = this.state.scrollPosition + deltaY;
+        newScrollPosition= Math.min(newScrollPosition,maxScrollPosition);
+        newScrollPosition= Math.max(newScrollPosition,minScrollPosition);
+        this.state.scrollPosition = newScrollPosition;
+        this.updateScrollY(this.state.scrollPosition);
+        this.state.dragStartY = wmme.screenY;
+      }
+      listeners.moveListener = listeners.moveListener.bind(this);
+
+      document.addEventListener('mousemove',listeners.moveListener);
+
+      listeners.upListener = (wmu)=>{
+          // console.log("Done!!!",wmu);
+          this.state.dragging= false;
+          document.removeEventListener('mousemove',listeners.moveListener);
+          document.removeEventListener('mouseup',listeners.upListener);
+      };
+
+      document.addEventListener('mouseup',listeners.upListener);
     }
 
     render() {
@@ -284,11 +331,18 @@ class GraphTimeline extends React.Component {
         }
 
         let currentHeight = ((this.state.currentlyRunning + 2) * 30);
-        if(currentHeight >= this.state.height){
+        if((currentHeight >= this.state.height) && !this.state.hasMoved){
           this.state.heightToMove = currentHeight - this.state.height;
+          this.state.scrollBarHeight = this.state.height - (currentHeight - this.state.height);
         }
+        console.log(this.state.hasMoved);
         pendingHeight = pendingHeight + 1;
 
+        if(!this.state.hasMoved){
+          this.state.scrollPosition = this.state.heightToMove;
+        } else {
+          this.state.heightToMove = ((currentHeight/((2*this.state.height)-this.state.scrollBarHeight)) * (this.state.scrollPosition));
+        }
 
         return (
             <div>
@@ -300,10 +354,17 @@ class GraphTimeline extends React.Component {
                         </div>
                         {nodeElements}
                     </div>
+                    <div className={styles.verticalScroll} style={{height:this.state.height + 'px',
+                      left:(this.state.viewPortWidth - 25) + 'px', top:'0px', position:'absolute'}}>
+                      <div className={styles.scrollbox} onMouseDown={this.onDragStart}
+                        style={{position:'relative', top:this.state.scrollPosition + 'px', height:this.state.scrollBarHeight + 'px',}}>
+                      </div>
+                    </div>
                     <div className={styles.pendingView} style={{width:'174px', position:'absolute',
                       height:this.state.wallPaperHeight + 'px', left:this.state.viewPortWidth + 'px', top: -(pendingHeight * 30)+ 'px'}}>
                       <div>{pendingElems}</div>
                       </div>
+
                   </div>
                 </div>
                 <ZoomLine graph={this.state.graph} windowDurationMs={this.state.viewPortWidth / this.state.pxPerMs} cursorTs={this.state.cursorTs}
