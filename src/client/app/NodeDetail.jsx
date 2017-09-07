@@ -38,14 +38,18 @@ class NodeDetail extends React.Component {
     }
 
     render() {
-      let logs = (this.state.nodeLogs).join('\n');
+      let fullLogs = [];
+      this.state.nodeLogs.forEach((logs,stage) => {
+        fullLogs.push(<div key={stage}><em>Stage {stage}</em><br/>{logs}<br/></div>);
+      });
+      
       let duration = (this.state.node.completed - this.state.node.started) + "ms";
         return (<div>
             <h3>{this.state.node.stage_id} : {this.state.node.op}</h3>
             <div style={{display:'flex', flexDirection:'row', width: '1024px'}}>
               <div className={styles.console} style={{display:'inline-block', minHeight:'200px', maxHeight:'300px',
               minWidth: '700px'}}>
-                {logs}
+                {fullLogs}
               </div>
               <div className={styles.nodeInfo} style={{display:'inline-block'}}>
                 Created: {this.formatTime(this.state.node.created)}<br/>

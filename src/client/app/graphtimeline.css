@@ -1,19 +1,27 @@
 
-.outerView {
+.wallPaper {
   position: relative;
+  background-color: #f9f9f9;
+}
+
+.overview {
+  position: relative;
+  overflow: hidden;
   border: 3px solid black;
+}
+
+.pendingView {
   background-image: url('./pending_area.png');
+  border-left: 3px solid black;
+}
+
+.scrollDownView {
+  position: relative;
+  overflow-y: hidden;
 }
 
 .viewport {
-    border-right: 3px solid black;
-    overflow-y: auto;
-    overflow-x: hidden;
-}
-
-.innerViewport {
-  position: relative;
-  background-color: #f9f9f9;
+    overflow: hidden;
 }
 
 .currentLine{

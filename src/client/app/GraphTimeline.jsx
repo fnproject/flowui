@@ -21,7 +21,10 @@ class GraphTimeline extends React.Component {
             viewPortWidth: 850,
             height:300,
             pxPerMs:0.06,
-            wallPaperWidth:30000
+            wallPaperWidth:30000,
+            wallPaperHeight:5000,
+            currentlyRunning: null,
+            heightToMove: 0
         };
         this.selectNode = this.selectNode.bind(this);
         this.updateScroll = this.updateScroll.bind(this);
@@ -166,6 +169,9 @@ class GraphTimeline extends React.Component {
             dependenciesOfSelected = this.state.graph.findDepIds(this.state.selectedNode.stage_id);
             dependenciesOfSelected.add(this.state.selectedNode.stage_id);
         }
+
+        let pendingHeight = null;
+
         nodes.forEach((node, idx) => {
             let createTs = relativeX(node.created);
             dependencyMap.set(node.stage_id, node.dependencies);
@@ -188,9 +194,13 @@ class GraphTimeline extends React.Component {
                     break;
                 case 'running':
                     styleExtra.push(styles.running);
+                    this.state.currentlyRunning = idx;
                     break;
                 case 'pending':
                     styleExtra.push(styles.pending);
+                    if(pendingHeight === null){
+                      pendingHeight = idx;
+                    }
                     break;
 
             }
@@ -208,7 +218,7 @@ class GraphTimeline extends React.Component {
 
             if (node.state === 'pending') {
                 let pendingboxStyle = {
-                    left: (this.state.viewPortWidth + 3) + 'px',
+                    left: '3px',
                     position: 'absolute',
                     height: '20px',
                     top: '' + ((idx + 1) * nodeHeight) + 'px',
@@ -268,22 +278,33 @@ class GraphTimeline extends React.Component {
 
         let leftPosition;
         if((relativeX(Date.now()) < this.state.wallPaperWidth) && this.state.live){
-          leftPosition = {left:relativeX(Date.now()), height: this.state.height + 'px'}
+          leftPosition = {left:relativeX(Date.now()), height: this.state.wallPaperHeight + 'px'}
         } else {
-          leftPosition = {left:relativeX(this.state.graph.completed) + 'px', height: this.state.height + 'px'}
+          leftPosition = {left:relativeX(this.state.graph.completed) + 'px', height: this.state.wallPaperHeight + 'px'}
         }
+
+        let currentHeight = ((this.state.currentlyRunning + 2) * 30);
+        if(currentHeight >= this.state.height){
+          this.state.heightToMove = currentHeight - this.state.height;
+        }
+        pendingHeight = pendingHeight + 1;
+
 
         return (
             <div>
-                <div className={styles.outerView} style={{width:this.state.innerViewWidth + 'px', height:this.state.height + 'px'}}>
-                    <div className={styles.viewport} style={{width:this.state.viewPortWidth + 'px', height:this.state.height + 'px'}}>
-                        <div className={styles.innerViewport} style={{left: -relativeX(this.state.cursorTs) + 'px', width:this.state.wallPaperWidth + 'px', height: '500px'}}>
-                          <div className={styles.currentLine} style={leftPosition}>
-                            </div>
-                            {nodeElements}
+                <div className={styles.overview} style={{width:this.state.innerViewWidth + 'px', height:this.state.height + 'px'}}>
+                  <div className={styles.viewport} style={{width:this.state.viewPortWidth + 'px', height:this.state.height + 'px'}}>
+                      <div className={styles.wallPaper} style={{left: -relativeX(this.state.cursorTs) + 'px', top: -this.state.heightToMove + 'px',
+                        width:this.state.wallPaperWidth + 'px', height:this.state.wallPaperHeight + 'px'}}>
+                      <div className={styles.currentLine} style={leftPosition}>
                         </div>
+                        {nodeElements}
                     </div>
-                    <div>{pendingElems}</div>
+                    <div className={styles.pendingView} style={{width:'174px', position:'absolute',
+                      height:this.state.wallPaperHeight + 'px', left:this.state.viewPortWidth + 'px', top: -(pendingHeight * 30)+ 'px'}}>
+                      <div>{pendingElems}</div>
+                      </div>
+                  </div>
                 </div>
                 <ZoomLine graph={this.state.graph} windowDurationMs={this.state.viewPortWidth / this.state.pxPerMs} cursorTs={this.state.cursorTs}
                           maxTs={this.state.relativeTimestamp}

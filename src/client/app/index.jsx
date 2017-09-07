@@ -102,11 +102,14 @@ class App extends React.Component {
       this.state.currentNode = node;
 
       if(node != null){
-        let deps = graph.findDepIds(node.stage_id);
-        deps.add(node.stage_id);
+        let deps = Array.from(graph.findDepIds(node.stage_id));
+        deps.reverse();
+        deps.push(node.stage_id);
+        console.log(deps)
+
         console.log(`node ${graph.graph_id}: ${node.stage_id} selected`);
 
-        this.state.nodeLogs = [];
+        this.state.nodeLogs = new Map();
         for(let item of deps){
           let nodeDep = graph.getNode(item);
           if (nodeDep.call_id) {
@@ -115,7 +118,7 @@ class App extends React.Component {
               this.state.fnclient.loadLogs(appId, nodeDep.call_id)
                   .then((logs) => {
                         if(logs != ""){
-                          this.state.nodeLogs.push(logs);
+                          this.state.nodeLogs.set(nodeDep.stage_id, logs);
                           this.setState(this.state);
                         }
                   }).catch((e) => {

@@ -1,10 +1,10 @@
 
 .console {
   font-family: Courier;
+  font-size: 16;
   color: #CCCCCC;
   background: #000000;
   border: 3px double #CCCCCC;
-  padding: 10px;
   overflow: auto;
   white-space: pre-wrap;
   flex: 1;
