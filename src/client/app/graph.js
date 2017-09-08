@@ -39,6 +39,8 @@ class Graph {
         updateStage = updateStage.bind(this);
 
         switch (evt.type) {
+          case 'model.GraphCreatedEvent': {}
+            break;
             case 'model.StageAddedEvent': {
                 const evtData = evt.data;
                 const stage_id = evtData.stage_id;

@@ -36,19 +36,20 @@ class Controller {
                 }
                 break;
             default: {
+              let graph;
                 let graph_id = event.sub;
                 if (event.type === 'model.GraphCreatedEvent') {
-                    let graph = new Graph(event);
+                    graph = new Graph(event);
                     this.active_graphs.set(graph_id, graph);
 
                 } else {
-                    let graph = this.active_graphs.get(graph_id)
+                    graph = this.active_graphs.get(graph_id)
                     if (!graph) {
                         console.log("Got event for unknown graph ${graphId}")
                         return;
                     }
-                    graph.receiveEvent(event)
                 }
+                graph.receiveEvent(event)
             }
 
         }

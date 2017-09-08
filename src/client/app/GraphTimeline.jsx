@@ -130,6 +130,7 @@ class GraphTimeline extends React.Component {
         </div>);
     }
 
+//TODO: Fix newScrollPosition so it's neither laggy or jumpy
     onDragStart(e){
       this.state.dragging = true;
       this.state.hasMoved = true;
@@ -139,8 +140,7 @@ class GraphTimeline extends React.Component {
         let deltaY = wmme.screenY - this.state.dragStartY;
         let minScrollPosition = 0;
         let maxScrollPosition = this.state.height - this.state.scrollBarHeight;
-        let currentHeight = ((this.state.currentlyRunning - 2) * 30);
-        let inverted = this.state.height/currentHeight;
+        let inverted = this.state.scrollBarHeight/this.state.height;
 
         let newScrollPosition = this.state.scrollPosition + (deltaY/inverted);
         newScrollPosition= Math.min(newScrollPosition,maxScrollPosition);
@@ -244,16 +244,18 @@ class GraphTimeline extends React.Component {
                 case 'running':
                     styleExtra.push(styles.running);
                     this.state.currentlyRunning = idx;
-                    if(this.state.pendingNodes.includes(node)){
-                      let index = this.state.pendingNodes.indexOf(node);
-                      this.state.pendingNodes.splice(index,1);
-                    }
                     break;
                 case 'pending':
                     styleExtra.push(styles.pending);
+                    if(!this.state.pendingNodes.includes(node)){
                     this.state.pendingNodes.push(node);
+                    }
                     break;
+            }
 
+            if(node.started && this.state.pendingNodes.includes(node)){
+              let index = this.state.pendingNodes.indexOf(node);
+              this.state.pendingNodes.splice(index,1);
             }
 
             if (this.state.selectedNode === node) {
@@ -263,18 +265,17 @@ class GraphTimeline extends React.Component {
             const nodeHeight = 30;
 
             let deps = ""
-            if (node.dependencies.length !== 0) {
+            if ((node.dependencies.length !== 0)) {
                 deps = "Dependencies: Stage " + node.dependencies;
             }
 
             if (node.state === 'pending') {
               let index = this.state.pendingNodes.indexOf(node);
-              // console.log(this.state.pendingNodes);
                 let pendingboxStyle = {
                     left: '3px',
                     position: 'absolute',
                     height: '20px',
-                    top: '' + (idx * nodeHeight) + 'px',
+                    top: '' + (index * nodeHeight) + 'px',
                 };
                 let pendElem = (<div key={node.stage_id + 1} className={styles.node + ' ' + styleExtra.join(' ')}
                                      style={pendingboxStyle}
@@ -344,10 +345,6 @@ class GraphTimeline extends React.Component {
           this.state.scrollBarHeight = (this.state.height/this.state.currentHeight) * this.state.height;
           this.state.heightToMove = this.state.currentHeight - this.state.height;
         }
-<<<<<<< HEAD
-        pendingHeight = pendingHeight + 1;
-=======
->>>>>>> oc-compose_delay_external
 
         if(!this.state.hasMoved){
           this.state.scrollPosition = this.state.height - this.state.scrollBarHeight;
