@@ -1,3 +1,15 @@
+* Correct time format
+* Better display for thencompose  (put composed node into place of compose?)
+* Show delay as pending rather than active when waiting (i.e. when node is composed, replace pending node with other node )
+* Show call logs for main fn :  13:1:1.144
+
+
+
+
+
+DONE:
+
+* Show active time of events
 * Time line: live scrolling mode
     - Quick open new graph (i.e. checkbox - open next graph)
     - show timeline scrolling from right
@@ -9,17 +21,6 @@
    - Add window overlay
    - show errors
    - show times
-* Node info:
-    - Show node details,
-    - Show Code position
-    - Get node logs and show them
 
-
-
-More detail:
-   - Fetch call logs to show Fn start/create times
-
-
-DONE:
-
-* Show active time of events
+* More detail:
+                  - Fetch call logs to show Fn start/create times
