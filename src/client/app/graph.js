@@ -54,8 +54,8 @@ class Graph {
                 break;
             case 'model.DelayScheduledEvent': {
                 updateStage(evt.data.stage_id, (stage) => {
-                    stage.state = 'running';
-                    stage.started = Date.parse(evt.data.ts);
+                    //stage.state = 'running';
+                    //stage.started = Date.parse(evt.data.ts);
                     return stage;
                 });
 
@@ -74,6 +74,7 @@ class Graph {
             case 'model.FaasInvocationCompletedEvent': {
                 updateStage(evt.data.stage_id, (stage) => {
                     stage.call_id = evt.data.call_id;
+                    stage.completed = Date.parse(evt.data.ts);
                     return stage;
                 });
 
@@ -82,7 +83,12 @@ class Graph {
             case 'model.StageCompletedEvent': {
                 updateStage(evt.data.stage_id,(stage)=>{
                     stage.state = evt.data.result.successful ? "successful" : "failed";
-                    stage.completed = Date.parse(evt.data.ts);
+                    if (!stage.completed){
+                      stage.completed = Date.parse(evt.data.ts);
+                    }
+                    if (!stage.started){
+                      stage.started = stage.completed;
+                    }
                     return stage;
                 });
             }

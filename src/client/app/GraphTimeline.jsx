@@ -29,7 +29,9 @@ class GraphTimeline extends React.Component {
             dragStartY: 0,
             scrollPosition: 0,
             scrollBarHeight: 300,
-            hasMoved: false
+            hasMoved: false,
+            currentHeight: null,
+            pendingNodes: []
         };
         this.selectNode = this.selectNode.bind(this);
         this.updateScroll = this.updateScroll.bind(this);
@@ -217,8 +219,6 @@ class GraphTimeline extends React.Component {
             dependenciesOfSelected.add(this.state.selectedNode.stage_id);
         }
 
-        let pendingHeight = null;
-
         nodes.forEach((node, idx) => {
             let createTs = relativeX(node.created);
             dependencyMap.set(node.stage_id, node.dependencies);
@@ -242,12 +242,14 @@ class GraphTimeline extends React.Component {
                 case 'running':
                     styleExtra.push(styles.running);
                     this.state.currentlyRunning = idx;
+                    if(this.state.pendingNodes.includes(node)){
+                      let index = this.state.pendingNodes.indexOf(node);
+                      this.state.pendingNodes.splice(index,1);
+                    }
                     break;
                 case 'pending':
                     styleExtra.push(styles.pending);
-                    if(pendingHeight === null){
-                      pendingHeight = idx;
-                    }
+                    this.state.pendingNodes.push(node);
                     break;
 
             }
@@ -264,11 +266,13 @@ class GraphTimeline extends React.Component {
             }
 
             if (node.state === 'pending') {
+              let index = this.state.pendingNodes.indexOf(node);
+              // console.log(this.state.pendingNodes);
                 let pendingboxStyle = {
                     left: '3px',
                     position: 'absolute',
                     height: '20px',
-                    top: '' + ((idx + 1) * nodeHeight) + 'px',
+                    top: '' + (idx * nodeHeight) + 'px',
                 };
                 let pendElem = (<div key={node.stage_id + 1} className={styles.node + ' ' + styleExtra.join(' ')}
                                      style={pendingboxStyle}
@@ -327,21 +331,22 @@ class GraphTimeline extends React.Component {
         if((relativeX(Date.now()) < this.state.wallPaperWidth) && this.state.live){
           leftPosition = {left:relativeX(Date.now()), height: this.state.wallPaperHeight + 'px'}
         } else {
-          leftPosition = {left:relativeX(this.state.graph.completed) + 'px', height: this.state.wallPaperHeight + 'px'}
+          leftPosition = {visibility:'hidden'};
         }
 
-        let currentHeight = ((this.state.currentlyRunning + 2) * 30);
-        if((currentHeight >= this.state.height) && !this.state.hasMoved){
-          this.state.heightToMove = currentHeight - this.state.height;
-          this.state.scrollBarHeight = this.state.height - (currentHeight - this.state.height);
+
+        if(this.state.currentHeight === null || (((this.state.currentlyRunning + 2) * 30) > this.state.currentHeight)){
+          this.state.currentHeight = ((this.state.currentlyRunning + 2) * 30);
         }
-        console.log(this.state.hasMoved);
-        pendingHeight = pendingHeight + 1;
+        if((this.state.currentHeight >= this.state.height) && !this.state.hasMoved){
+          this.state.scrollBarHeight = (this.state.height/this.state.currentHeight) * this.state.height;
+          this.state.heightToMove = this.state.currentHeight - this.state.height;
+        }
 
         if(!this.state.hasMoved){
-          this.state.scrollPosition = this.state.heightToMove;
+          this.state.scrollPosition = this.state.height - this.state.scrollBarHeight;
         } else {
-          this.state.heightToMove = ((currentHeight/((2*this.state.height)-this.state.scrollBarHeight)) * (this.state.scrollPosition));
+          this.state.heightToMove = ((this.state.currentHeight/((2*this.state.height)-this.state.scrollBarHeight)) * (this.state.scrollPosition));
         }
 
         return (
@@ -361,7 +366,7 @@ class GraphTimeline extends React.Component {
                       </div>
                     </div>
                     <div className={styles.pendingView} style={{width:'174px', position:'absolute',
-                      height:this.state.wallPaperHeight + 'px', left:this.state.viewPortWidth + 'px', top: -(pendingHeight * 30)+ 'px'}}>
+                      height:this.state.wallPaperHeight + 'px', left:this.state.viewPortWidth + 'px', top: '0px'}}>
                       <div>{pendingElems}</div>
                       </div>
 

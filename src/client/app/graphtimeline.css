@@ -18,7 +18,7 @@
 .verticalScroll {
   background-color: lightgrey;
   opacity: 0.2;
-  border-left: 1px dotted black;
+  border-left: 1px solid black;
   z-index: 4;
   width: 25px;
 }
@@ -27,7 +27,7 @@
   width: 25px;
   background-color: black;
   opacity: 0.6;
-  border-radius: 5px;
+  border-radius: 8px;
   cursor: -webkit-grab;
 
 }
