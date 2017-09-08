@@ -137,8 +137,10 @@ class GraphTimeline extends React.Component {
         let deltaY = wmme.screenY - this.state.dragStartY;
         let minScrollPosition = 0;
         let maxScrollPosition = this.state.height - this.state.scrollBarHeight;
+        let currentHeight = ((this.state.currentlyRunning - 2) * 30);
+        let inverted = this.state.height/currentHeight;
 
-        let newScrollPosition = this.state.scrollPosition + deltaY;
+        let newScrollPosition = this.state.scrollPosition + (deltaY/inverted);
         newScrollPosition= Math.min(newScrollPosition,maxScrollPosition);
         newScrollPosition= Math.max(newScrollPosition,minScrollPosition);
         this.state.scrollPosition = newScrollPosition;
@@ -335,7 +337,6 @@ class GraphTimeline extends React.Component {
           this.state.heightToMove = currentHeight - this.state.height;
           this.state.scrollBarHeight = this.state.height - (currentHeight - this.state.height);
         }
-        console.log(this.state.hasMoved);
         pendingHeight = pendingHeight + 1;
 
         if(!this.state.hasMoved){

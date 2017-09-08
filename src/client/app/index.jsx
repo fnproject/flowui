@@ -105,7 +105,6 @@ class App extends React.Component {
         let deps = Array.from(graph.findDepIds(node.stage_id));
         deps.reverse();
         deps.push(node.stage_id);
-        console.log(deps)
 
         console.log(`node ${graph.graph_id}: ${node.stage_id} selected`);
 
