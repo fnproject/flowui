@@ -42,18 +42,57 @@ class NodeDetail extends React.Component {
 
     render() {
       let fullLogs = [];
-      this.state.nodeLogs.forEach((logs,stage) => {
-        fullLogs.push(<div key={stage}><em>Stage {stage}</em><br/>{logs}<br/></div>);
-      });
-
       let duration;
-      if (duration == null){
-        duration = " ...";
+      let stageId;
+      let op;
+      let started = "";
+      let finished = "";
+      if(this.state.node.state !== 'graph'){
+        this.state.nodeLogs.forEach((logs,node) => {
+          let logsGiven;
+          if (logs == null){
+            logsGiven = "No logs";
+          } else {
+            logsGiven = logs;
+          }
+          let stage = node.stage_id;
+          let success = node.state
+          if (success === 'successful'){
+            fullLogs.push(<div key={stage} style={{color:'green'}}><em>>>> Stage {stage}</em><br/>{logsGiven}<br/></div>);
+          } else if (success === 'failed'){
+            fullLogs.push(<div key={stage} style={{color:'red'}}><em>Stage {stage}</em><br/>{logsGiven}<br/></div>);
+          }
+        });
+        stageId = this.state.node.stage_id;
+        op = this.state.node.op;
+
+        if(this.state.node.started == null) {
+          started = "Started: ...";
+        } else {
+          started = "Started: " + this.formatTime(this.state.node.started);
+        }
+        if(this.state.node.completed == null) {
+          finished = "Finished: ...";
+        } else {
+          finished = "Finished: " + this.formatTime(this.state.node.completed);
+        }
+
+        if (this.state.node.completed == null){
+          duration = " ...";
+        } else {
+          duration = (this.state.node.completed - this.state.node.started) + "ms";
+        }
       } else {
-        duration = (this.state.node.completed - this.state.node.started) + "ms";
+        stageId = "Graph";
+        if (this.state.node.main_ended == null){
+          duration = " ...";
+        } else {
+          duration = (this.state.node.main_ended - this.state.node.created) + "ms";
+        }
       }
+
         return (<div>
-            <h3>{this.state.node.stage_id} : {this.state.node.op}</h3>
+            <h3>{stageId} : {op}</h3>
             <div style={{display:'flex', flexDirection:'row', width: '1024px'}}>
               <div className={styles.console} style={{display:'inline-block', minHeight:'200px', maxHeight:'300px',
               minWidth: '700px'}}>
@@ -61,8 +100,8 @@ class NodeDetail extends React.Component {
               </div>
               <div className={styles.nodeInfo} style={{display:'inline-block'}}>
                 Created: {this.formatTime(this.state.node.created)}<br/>
-                Started: {this.formatTime(this.state.node.started)}<br/>
-                Finished: {this.formatTime(this.state.node.completed)}<br/>
+                {started}<br/>
+                {finished}<br/>
                 Duration: {duration}<br/>
               </div>
             </div>

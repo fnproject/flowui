@@ -101,7 +101,7 @@ class App extends React.Component {
     onNodeSelected(graph, node) {
       this.state.currentNode = node;
 
-      if(node != null){
+      if((node != null) && (node.state !== 'graph')){
         let deps = Array.from(graph.findDepIds(node.stage_id));
         deps.reverse();
         deps.push(node.stage_id);
@@ -117,7 +117,7 @@ class App extends React.Component {
               this.state.fnclient.loadLogs(appId, nodeDep.call_id)
                   .then((logs) => {
                         if(logs != ""){
-                          this.state.nodeLogs.set(nodeDep.stage_id, logs);
+                          this.state.nodeLogs.set(nodeDep, logs);
                           this.setState(this.state);
                         }
                   }).catch((e) => {
@@ -127,8 +127,7 @@ class App extends React.Component {
         }
           this.setState(this.state);
         }
-
-
+        this.setState(this.state);
     }
 
     // Please note this currently only works for the first graph you create

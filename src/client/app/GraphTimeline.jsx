@@ -31,7 +31,8 @@ class GraphTimeline extends React.Component {
             scrollBarHeight: 300,
             hasMoved: false,
             currentHeight: null,
-            pendingNodes: []
+            pendingNodes: [],
+            graphNode: props.graph.getNodes().shift(),
         };
         this.selectNode = this.selectNode.bind(this);
         this.updateScroll = this.updateScroll.bind(this);
@@ -140,7 +141,7 @@ class GraphTimeline extends React.Component {
         let deltaY = wmme.screenY - this.state.dragStartY;
         let minScrollPosition = 0;
         let maxScrollPosition = this.state.height - this.state.scrollBarHeight;
-        let inverted = this.state.scrollBarHeight/this.state.height;
+        let inverted = this.state.scrollBarHeight/(this.state.height-this.state.scrollPosition);
 
         let newScrollPosition = this.state.scrollPosition + (deltaY/inverted);
         newScrollPosition= Math.min(newScrollPosition,maxScrollPosition);
@@ -165,6 +166,7 @@ class GraphTimeline extends React.Component {
 
     render() {
         let nodes = this.state.graph.getNodes();
+        nodes.shift();
         let minCreateTime = nodes.reduce((v, n) => Math.min(v, n.created), Infinity);
 
         //console.log(`graph timelines are ${this.state.graph.created} ->${minCreateTime}`);
@@ -193,11 +195,11 @@ class GraphTimeline extends React.Component {
             left: '0px'
         };
 
-        //console.log("Ended: " + this.state.graph.main_ended);
-
         let lifeElem = (<div key='0'>
             <div className={styles.node + ' ' + styles.lifecycle}
-                 style={mainLifeStyle}> {this.state.graph.function_id} </div>
+                 style={mainLifeStyle}
+                 onClick={(e) => this.selectNode(this.state.graphNode)}
+                 >{this.state.graph.function_id}</div>
         </div>);
 
         let pendingElems = [(<div key='0'
@@ -216,11 +218,10 @@ class GraphTimeline extends React.Component {
         nodeElements.push(lifeElem);
 
         var dependenciesOfSelected = new Set();
-        if (this.state.selectedNode) {
+        if (this.state.selectedNode && (this.state.selectedNode.state !== 'graph')) {
             dependenciesOfSelected = this.state.graph.findDepIds(this.state.selectedNode.stage_id);
             dependenciesOfSelected.add(this.state.selectedNode.stage_id);
         }
-
         nodes.forEach((node, idx) => {
             let createTs = relativeX(node.created);
             dependencyMap.set(node.stage_id, node.dependencies);
@@ -341,7 +342,7 @@ class GraphTimeline extends React.Component {
         if(this.state.currentHeight === null || (((this.state.currentlyRunning + 2) * 30) > this.state.currentHeight)){
           this.state.currentHeight = ((this.state.currentlyRunning + 2) * 30);
         }
-        if((this.state.currentHeight >= this.state.height) && !this.state.hasMoved){
+        if((this.state.currentHeight >= this.state.height)){
           this.state.scrollBarHeight = (this.state.height/this.state.currentHeight) * this.state.height;
           this.state.heightToMove = this.state.currentHeight - this.state.height;
         }
@@ -349,7 +350,7 @@ class GraphTimeline extends React.Component {
         if(!this.state.hasMoved){
           this.state.scrollPosition = this.state.height - this.state.scrollBarHeight;
         } else {
-          this.state.heightToMove = ((this.state.currentHeight/((2*this.state.height)-this.state.scrollBarHeight)) * (this.state.scrollPosition));
+          this.state.heightToMove = ((this.state.scrollPosition/this.state.height) * this.state.currentHeight);
         }
 
         return (

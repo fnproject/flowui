@@ -39,7 +39,13 @@ class Graph {
         updateStage = updateStage.bind(this);
 
         switch (evt.type) {
-          case 'model.GraphCreatedEvent': {}
+          case 'model.GraphCreatedEvent': {
+            this.stage_map.set(-1, {
+              state: 'graph',
+              stage_id: -1,
+              created: Date.parse(evt.data.ts)
+            });
+          }
             break;
             case 'model.StageAddedEvent': {
                 const evtData = evt.data;
@@ -96,13 +102,19 @@ class Graph {
             }
                 break;
             case 'model.GraphCommittedEvent': {
-                const evtData = evt.data;
-                this.main_ended = Date.parse(evtData.ts);
+              const evtData = evt.data;
+              updateStage(-1, (stage) => {
+                stage.main_ended = Date.parse(evtData.ts);
+              });
+              this.main_ended = Date.parse(evtData.ts);
             }
                 break;
             case 'model.GraphCompletedEvent' : {
-                const evtData = evt.data;
-                this.finished = Date.parse(evtData.ts);
+              const evtData = evt.data;
+              updateStage(-1, (stage) => {
+                stage.completed = Date.parse(evtData.ts);
+              });
+              this.finished = Date.parse(evtData.ts);
             }
                 break;
 

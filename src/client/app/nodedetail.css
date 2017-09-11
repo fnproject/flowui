@@ -1,7 +1,7 @@
 
 .console {
   font-family: Courier;
-  font-size: 16;
+  font-size: 18;
   color: #CCCCCC;
   background: #000000;
   border: 3px double #CCCCCC;
@@ -12,6 +12,7 @@
   margin-left: 0px;
   margin-right: 0px;
   z-index: 2;
+  padding: 10px;
 }
 
 .nodeInfo {

@@ -20,7 +20,8 @@ class ZoomLine extends React.Component {
             dragging:false,
             dragStartX: 0,
             stopped: false,
-            height: 100
+            height: 100,
+            scrollBoxWidth: props.width
         };
         this.onDragStart = this.onDragStart.bind(this);
         this.relativeX = this.relativeX.bind(this);
@@ -67,12 +68,12 @@ class ZoomLine extends React.Component {
         const maxCursorTs = maxTs - this.state.windowDurationMs;
         let  curDurationTs = (maxTs - minCursorTs) ;
         if (curDurationTs < this.state.windowDurationMs){
-          inverted = this.state.width/(this.state.windowDurationMs);
+          inverted = (this.state.windowDurationMs)/this.state.width;
         }else {
           inverted = this.state.width/curDurationTs;
         }
 
-        let newCursorTs = this.state.cursorTs   +  (deltaX/inverted);
+        let newCursorTs = this.state.cursorTs   +  (deltaX / inverted);
         newCursorTs= Math.min(newCursorTs,maxCursorTs);
         newCursorTs= Math.max(newCursorTs,minCursorTs);
         this.state.cursorTs = newCursorTs;
@@ -100,8 +101,9 @@ class ZoomLine extends React.Component {
 
     render() {
 
-
-        let nodesByStart = this.state.graph.getNodes().filter((n) => n["started"] != null);
+        let nodesArray = this.state.graph.getNodes()
+        nodesArray.shift();
+        let nodesByStart = nodesArray.filter((n) => n["started"] != null);
         nodesByStart.sort((a, b) => a.started - b.started);
         // running sorted by completion time (increasing)
         let running = [];
@@ -162,11 +164,10 @@ class ZoomLine extends React.Component {
 
         let  curDurationTs = (maxTs - this.state.graph.created) ;
 
-        let scrollBoxWidthPx;
         if (curDurationTs < this.state.windowDurationMs){
-          scrollBoxWidthPx = this.state.width;
+          this.state.scrollBoxWidth = this.state.width;
         }else{
-          scrollBoxWidthPx = this.state.windowDurationMs * (this.state.width/curDurationTs);
+          this.state.scrollBoxWidth = this.state.windowDurationMs * (this.state.width/curDurationTs);
         }
 
         let relativeY = function (count) {
@@ -194,7 +195,7 @@ class ZoomLine extends React.Component {
           height: this.state.height + 'px'
         };
 
-        var rightShadeLeftPx= this.relativeX(this.state.cursorTs) + scrollBoxWidthPx;
+        var rightShadeLeftPx= this.relativeX(this.state.cursorTs) + this.state.scrollBoxWidth;
         var rightShadeWidth = this.state.width - rightShadeLeftPx;
 
         var rightShadeStyle = {
@@ -223,7 +224,7 @@ class ZoomLine extends React.Component {
             }} className={styles.viewport}>
                 {elems}
                 <div className={styles.scrollboxshade} style={leftShadeStyle}> </div>
-                <div  onMouseDown={this.onDragStart} className={styles.scrollbox} style={{height: this.state.height + "px", left:this.relativeX(this.state.cursorTs)+ 'px', width:scrollBoxWidthPx + 'px'}}> </div>
+                <div  onMouseDown={this.onDragStart} className={styles.scrollbox} style={{height: this.state.height + "px", left:this.relativeX(this.state.cursorTs)+ 'px', width:this.state.scrollBoxWidth + 'px'}}> </div>
                   <div className={styles.scrollboxshade} style={rightShadeStyle}> </div>
                     <div className={styles.currentLine} style={leftPosition}>
                       </div>
