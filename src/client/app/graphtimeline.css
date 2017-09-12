@@ -124,6 +124,11 @@
   border-bottom-left-radius: 0px;
 }
 
+
+.node.invokeFunction {
+    border:2px solid darkblue;
+}
+
 [data-tooltip] {
   position: relative;
   z-index: 4;

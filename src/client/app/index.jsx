@@ -77,7 +77,7 @@ class App extends React.Component {
         }
         return (
             <div>
-                <GraphTimeline graph={graph} onNodeSelected={this.onNodeSelected} live={live}/>
+                <GraphTimeline graph={graph} width={1200} onNodeSelected={this.onNodeSelected} />
             </div>
         );
     }
@@ -151,7 +151,7 @@ class App extends React.Component {
                  {graphListItems}
               </div>
               <div>
-                <div style={{WebkitBoxAlign: 'center', WebkitBoxPack: 'center', display: '-webkit-box'}}>
+                <div style={{position:'relative',left:'400px'}}>
                     {this.renderCurrentGraph()}
                 </div>
                 <div style={{WebkitBoxAlign: 'center', WebkitBoxPack: 'center', display: '-webkit-box', height:'400px'}}>

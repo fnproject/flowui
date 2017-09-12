@@ -20,6 +20,10 @@ class Graph {
         return this.graphId;
     }
 
+
+    isLive(){
+        return this.finished == null;
+    }
     /**
      * pushes an event to the graph structure, updates
      * @param evt
@@ -40,11 +44,6 @@ class Graph {
 
         switch (evt.type) {
           case 'model.GraphCreatedEvent': {
-            this.stage_map.set(-1, {
-              state: 'graph',
-              stage_id: -1,
-              created: Date.parse(evt.data.ts)
-            });
           }
             break;
             case 'model.StageAddedEvent': {
@@ -56,7 +55,7 @@ class Graph {
                         stage_id: stage_id,
                         created: Date.parse(evtData.ts),
                         op: evtData.op,
-                        dependencies: evtData.dependencies
+                        dependencies: evtData.dependencies || []
                     });
             }
                 break;
@@ -103,9 +102,6 @@ class Graph {
                 break;
             case 'model.GraphCommittedEvent': {
               const evtData = evt.data;
-              updateStage(-1, (stage) => {
-                stage.main_ended = Date.parse(evtData.ts);
-              });
               this.main_ended = Date.parse(evtData.ts);
             }
                 break;
