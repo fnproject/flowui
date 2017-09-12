@@ -21,9 +21,10 @@ class Graph {
     }
 
 
-    isLive(){
+    isLive() {
         return this.finished == null;
     }
+
     /**
      * pushes an event to the graph structure, updates
      * @param evt
@@ -43,9 +44,19 @@ class Graph {
         updateStage = updateStage.bind(this);
 
         switch (evt.type) {
-          case 'model.GraphCreatedEvent': {
-          }
-            break;
+            case 'model.GraphCreatedEvent': {
+                let start = Date.parse(evt.data.ts);
+                this.stage_map.set(-1, {
+                    state: 'running',
+                    stage_id: "main",
+                    created: start,
+                    started: start,
+                    dependencies: [],
+                    function_id:evt.data.function_id,
+                    op: 'main',
+                });
+            }
+                break;
             case 'model.StageAddedEvent': {
                 const evtData = evt.data;
                 const stage_id = evtData.stage_id;
@@ -55,7 +66,7 @@ class Graph {
                         stage_id: stage_id,
                         created: Date.parse(evtData.ts),
                         op: evtData.op,
-                        dependencies: evtData.dependencies || []
+                        dependencies: evtData.dependencies
                     });
             }
                 break;
@@ -88,29 +99,31 @@ class Graph {
             }
                 break;
             case 'model.StageCompletedEvent': {
-                updateStage(evt.data.stage_id,(stage)=>{
+                updateStage(evt.data.stage_id, (stage) => {
                     stage.state = evt.data.result.successful ? "successful" : "failed";
-                    if (!stage.completed){
-                      stage.completed = Date.parse(evt.data.ts);
+                    if (!stage.completed) {
+                        stage.completed = Date.parse(evt.data.ts);
                     }
-                    if (!stage.started){
-                      stage.started = stage.completed;
+                    if (!stage.started) {
+                        stage.started = stage.completed;
                     }
                     return stage;
                 });
             }
                 break;
             case 'model.GraphCommittedEvent': {
-              const evtData = evt.data;
-              this.main_ended = Date.parse(evtData.ts);
+                const evtData = evt.data;
+                updateStage(-1, (stage) => {
+                    stage.completed = Date.parse(evtData.ts);
+                    stage.state = "successful";
+                    return stage;
+                });
+                this.main_ended = Date.parse(evtData.ts);
             }
                 break;
             case 'model.GraphCompletedEvent' : {
-              const evtData = evt.data;
-              updateStage(-1, (stage) => {
-                stage.completed = Date.parse(evtData.ts);
-              });
-              this.finished = Date.parse(evtData.ts);
+                const evtData = evt.data;
+                this.finished = Date.parse(evtData.ts);
             }
                 break;
 
@@ -118,13 +131,13 @@ class Graph {
                 console.log("Unrecognised event ", evt.type);
 
         }
-        if(this.event_map[evt.type]){
-            this.event_map[evt.type].forEach((fn)=>fn(evt));
+        if (this.event_map[evt.type]) {
+            this.event_map[evt.type].forEach((fn) => fn(evt));
         }
     }
 
-    On(evt_name,fn){
-        (this.event_map[evt_name]=this.event_map[evt_name] || []).push(fn);
+    On(evt_name, fn) {
+        (this.event_map[evt_name] = this.event_map[evt_name] || []).push(fn);
     }
 
     getNode(id) {

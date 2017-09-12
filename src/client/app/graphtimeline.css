@@ -113,7 +113,7 @@
     background-repeat: repeat;
     border-top-right-radius: 0px;
     border-bottom-right-radius: 0px;
-    animation: animatedBackground 30s linear infinite;
+    animation: animatedBackground 10s linear infinite;
     width: 1024px;
 }
 
@@ -127,6 +127,7 @@
 
 .node.invokeFunction {
     border:2px solid darkblue;
+    background: lightblue;
 }
 
 [data-tooltip] {
