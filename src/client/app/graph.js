@@ -46,7 +46,7 @@ class Graph {
         switch (evt.type) {
             case 'model.GraphCreatedEvent': {
                 let start = Date.parse(evt.data.ts);
-                this.stage_map.set(-1, {
+                this.stage_map.set("main", {
                     state: 'running',
                     stage_id: "main",
                     created: start,
@@ -113,7 +113,7 @@ class Graph {
                 break;
             case 'model.GraphCommittedEvent': {
                 const evtData = evt.data;
-                updateStage(-1, (stage) => {
+                updateStage("main", (stage) => {
                     stage.completed = Date.parse(evtData.ts);
                     stage.state = "successful";
                     return stage;
@@ -126,7 +126,13 @@ class Graph {
                 this.finished = Date.parse(evtData.ts);
             }
                 break;
+            case 'model.StageComposedEvent':{
+                updateStage(evt.data.composed_stage_id,(stage)=>{
+                    stage.dependencies.push(evt.data.stage_id);
+                    return stage;
+                });
 
+            }
             default:
                 console.log("Unrecognised event ", evt.type);
 

@@ -18,8 +18,8 @@ class GraphTimeline extends React.Component {
             autoScroll: props.graph.isLive(),
             width: props.width,
             viewPortWidth: props.width - 150,
-            height: 600,
-            pxPerMs: 0.03,
+            height: 400,
+            pxPerMs: 0.06,
             wallPaperWidth: 30000,
             graphHeight: 0,
             dragging: false,
@@ -31,7 +31,7 @@ class GraphTimeline extends React.Component {
             activeNodes: [],
             dependenciesOfSelected: new Map(),
             graphNode: props.graph.getNodes().shift(),
-            nodeHeight: 35,
+            nodeHeight: 28,
         };
         this.selectNode = this.selectNode.bind(this);
         this.manualScrollX = this.manualScrollX.bind(this);
@@ -75,52 +75,103 @@ class GraphTimeline extends React.Component {
                 }
             });
 
-        activeNodes.sort((a,b)=>{return a.created - b.created});
-        // node ID -> Row {rank:int,node:<node>}
-        var nodeRows = new Map();
-        var currentMax =0;
-        var lastMax = null;
-        activeNodes.forEach((node)=>{
-            var currentPos =-1;
-            node.dependencies.forEach((stage_id)=>{
-                if(nodeRows.has(stage_id)){
-                    let parentPos = nodeRows.get(stage_id);
-                    if(parentPos.node.completed && parentPos.node.completed < node.started){
-                        currentPos = Math.max(currentPos,parentPos.rank);
-                    }else{
-                        currentPos = Math.max(currentPos,parentPos.rank + 1);
+        activeNodes.sort((a, b) => {
+            return a.created - b.created
+        });
+
+
+        function nodesConflict(a, b) {
+            if ((a.state === 'running' && b.state === 'running')) {
+                return true;
+            }
+            if (a.state === 'running') {
+                if (b.state === 'running') {
+                    return true;
+                } else {
+                    return b.completed > a.started;
+                }
+            } else {
+                if (b.state === 'running') {
+                    return a.completed > b.started;
+                }   // both completed
+                return ((a.started > b.started) && (a.started < b.completed)) ||
+                    ((a.completed > b.started) && (a.completed < b.completed));
+
+            }
+
+
+        }
+
+
+        // rank_id -> Map[stage_id] - stage
+        var ranks = [];
+        var currentMax = 0;
+
+//        var lastMax = null;
+
+        function findRank(stage_id) {
+            for (let rank in ranks) {
+                if (ranks[rank].has(stage_id)) {
+                    return rank;
+                }
+            }
+            throw "No rank found for stage " + stage_id;
+        }
+
+        activeNodes
+            .forEach(
+                (node) => {
+                    // hidden nodes
+                    switch (node.op
+                        ) {
+                        case 'completedValue':
+                        case'externalFuture':
+                            return;
                     }
-                }
-            });
 
-            if(currentPos === -1){
-               // currentPos = currentMax;
-                if(lastMax === null || (lastMax.completed && lastMax.completed <= node.started)){
+                    var minRank = -1;
+                    // Never place dependent nodes above their parents
+                    node.dependencies.forEach((stage_id) => {
+                        minRank = Math.max(minRank, findRank(stage_id))
+                    });
 
-                }else{
-                    currentMax++;
-                }
-                currentPos = currentMax;
-            }
-            console.log("" + node.stage_id  + " -> " + currentPos);
-            nodeRows.set(node.stage_id,{rank:currentPos,node:node});
-            if(currentPos >= currentMax){
-                lastMax = node;
-            }
+                    //console.log("min rank for " + node.stage_id + " " +minRank);
+                    // no precendence here - put this on a new rank
+                    if (minRank === -1) {
+                        let rankMap = new Map();
+                        rankMap.set(node.stage_id, node);
+                        ranks.push(rankMap);
+                    } else {
+                        // if this is an invisible node, just dump it at its parent rank
+                        if (!(node.op === 'completedValue' || node.op === 'externalFuture')) {
+                            for (let [id, other] of ranks[minRank]) {
+                                if (nodesConflict(node, other)) {
+                                    // not free push this node to a new rank below min rank
+                                    let rankMap = new Map();
+                                    rankMap.set(node.stage_id, node);
+                                    ranks.splice(minRank + 1, 0, rankMap);
+                                    return;
+                                }
+                            }
+                        }
+                        // parent rank is free here
+                        ranks[minRank].set(node.stage_id, node);
+                    }
+                });
 
-            currentMax = Math.max(currentPos,currentMax);
+        // stage-id -> rank
+        let rankMap = new Map();
+        ranks.forEach((v, rank) => {
+            v.forEach((node) => {
+                rankMap.set(node.stage_id, rank);
+            })
         });
 
-        var rankMap = {};
-        nodeRows.forEach((v,k)=>{
-            console.log("Node"  + k + " is at rank " + v.rank, " max is " + currentMax);
-            rankMap[k] = v.rank;
-        });
         update.rankMap = rankMap;
         update.pendingNodes = pendingNodes;
         update.activeNodes = activeNodes;
 
-        let graphHeight = Math.max(this.state.height,this.state.nodeHeight * (currentMax));
+        let graphHeight = Math.max(this.state.height, this.state.nodeHeight * (ranks.length));
         update.graphHeight = graphHeight;
         let maxScroll = Math.max(0, graphHeight - this.state.height);
         update.maxScroll = maxScroll;
@@ -148,7 +199,7 @@ class GraphTimeline extends React.Component {
         this.setState({autoScroll: false, cursorTs: ts});
     }
 
-    manualScrollX(s) {
+    manualScrollY(s) {
         console.log("Scroll: ", s);
         this.setState({autoScroll: false, verticalScrollRatio: s});
     }
@@ -215,7 +266,7 @@ class GraphTimeline extends React.Component {
             newScrollPosition = Math.max(newScrollPosition, 0);
             this.state.verticalScrollPosition = newScrollPosition;
 
-            this.manualScrollX(this.state.verticalScrollPosition/maxScrollPosition);
+            this.manualScrollY(this.state.verticalScrollPosition / maxScrollPosition);
             this.state.dragStartY = wmme.screenY;
         };
         listeners.moveListener = listeners.moveListener.bind(this);
@@ -240,7 +291,7 @@ class GraphTimeline extends React.Component {
 
         // converts a timestamp to a relative X in the display viewport
         let relativeX = function (timeStamp) {
-            return (timeStamp - startTs) * self.state.pxPerMs ;
+            return (timeStamp - startTs) * self.state.pxPerMs;
         };
 
         let pendingElems = [(<div key='0'
@@ -257,6 +308,13 @@ class GraphTimeline extends React.Component {
 
         this.state.activeNodes.forEach((node, idx) => {
             let createTs = relativeX(node.created);
+
+            if(!this.state.rankMap.has(node.stage_id)){
+                // non-displayed stage.
+                return;
+            }
+            let rank = this.state.rankMap.get(node.stage_id);
+
 
             var styleExtra = [];
             if (node.op === 'invokeFunction') {
@@ -317,12 +375,12 @@ class GraphTimeline extends React.Component {
 
             let runboxStyle = {
                 position: 'absolute',
-                height: '20px',
+                height: (this.state.nodeHeight - 10 ) + 'px',
                 width: '' + widthPx + 'px',
-                top: '' + (this.state.rankMap[node.stage_id] * this.state.nodeHeight) + 'px',
+                top: '' + (rank * this.state.nodeHeight) + 'px',
                 left: startTs
             };
-            var nodeLabel;
+            let nodeLabel;
             if (node.op === 'invokeFunction' || node.op === 'main') {
                 nodeLabel = node.function_id;
             } else {
@@ -383,7 +441,7 @@ class GraphTimeline extends React.Component {
                          style={{width: this.state.viewPortWidth + 'px', height: this.state.height + 'px'}}>
                         <div className={styles.wallPaper} style={{
                             left: -relativeX(this.state.cursorTs) + 'px',
-                            top: -this.state.verticalScrollRatio * Math.max(9,this.state.graphHeight-this.state.height)+ 'px',
+                            top: -this.state.verticalScrollRatio * Math.max(9, this.state.graphHeight - this.state.height) + 'px',
                             width: this.state.wallPaperWidth + 'px',
                             height: this.state.graphHeight + 'px'
                         }}>
@@ -391,9 +449,11 @@ class GraphTimeline extends React.Component {
                             </div>
                             {nodeElements}
                         </div>
+
                         <div className={styles.verticalScroll} style={{
                             height: this.state.height + 'px',
-                            left: (this.state.viewPortWidth - 25) + 'px', top: '0px', position: 'absolute'
+                            left: (this.state.viewPortWidth - 25) + 'px', top: '0px', position: 'absolute',
+                            display: this.state.maxScroll===0?"none":"block"
                         }}>
                             <div className={styles.scrollbox} onMouseDown={this.onDragStart}
                                  style={{
