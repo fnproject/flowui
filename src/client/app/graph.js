@@ -52,7 +52,7 @@ class Graph {
                     created: start,
                     started: start,
                     dependencies: [],
-                    function_id:evt.data.function_id,
+                    function_id: evt.data.function_id,
                     op: 'main',
                 });
             }
@@ -126,13 +126,13 @@ class Graph {
                 this.finished = Date.parse(evtData.ts);
             }
                 break;
-            case 'model.StageComposedEvent':{
-                updateStage(evt.data.composed_stage_id,(stage)=>{
+            case 'model.StageComposedEvent': {
+                updateStage(evt.data.composed_stage_id, (stage) => {
                     stage.dependencies.push(evt.data.stage_id);
                     return stage;
                 });
-
             }
+                break;
             default:
                 console.log("Unrecognised event ", evt.type);
 

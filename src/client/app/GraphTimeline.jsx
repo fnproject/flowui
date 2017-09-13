@@ -14,22 +14,29 @@ class GraphTimeline extends React.Component {
             maxTimeStamp: Date.now(),
             cursorTs: props.graph.created,
             intervalTimer: -1,
-            responseOfSelected: null,
             autoScroll: props.graph.isLive(),
-            width: props.width,
+            width: 1200,
+            pendingWidth: 150,
+
+            zoomLineHeight: 100,
             viewPortWidth: props.width - 150,
-            height: 400,
+            viewPortHeight: props.height - 100,
+
+            height: props.height,
             pxPerMs: 0.06,
-            wallPaperWidth: 30000,
             graphHeight: 0,
             dragging: false,
             dragStartY: 0,
             verticalScrollPosition: 0,
             verticalScrollRatio: 0,
+
             scrollBarHeight: 300,
+            // node
             pendingNodes: [],
+            // node
             activeNodes: [],
-            dependenciesOfSelected: new Map(),
+            // stage_id
+            selectedDeps: new Map(),
             graphNode: props.graph.getNodes().shift(),
             nodeHeight: 28,
         };
@@ -37,12 +44,38 @@ class GraphTimeline extends React.Component {
         this.manualScrollX = this.manualScrollX.bind(this);
         this.manualScrollX = this.manualScrollX.bind(this);
         this.onDragStart = this.onDragStart.bind(this);
+        this.updateDimensions = this.updateDimensions.bind(this);
     }
 
+
+    updateDimensions() {
+        if (this.containerElem) {
+            let update_width = this.containerElem.getBoundingClientRect().width - 50;
+
+            this.setState({width: update_width, viewPortWidth: update_width - this.state.pendingWidth});
+        }
+    }
+
+     debounce(func, wait, immediate) {
+        var timeout;
+        return function() {
+            var context = this, args = arguments;
+            var later = function() {
+                timeout = null;
+                if (!immediate) func.apply(context, args);
+            };
+            var callNow = immediate && !timeout;
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+            if (callNow) func.apply(context, args);
+        };
+    };
     componentWillReceiveProps(props) {
         if (props.graph) {
             this.updateGraphDetails(props.graph)
         }
+        this.updateDimensions();
+        window.addEventListener("resize", this.debounce(this.updateDimensions,100));
 
     }
 
@@ -60,7 +93,7 @@ class GraphTimeline extends React.Component {
         if (graph.isLive()) {
             update.maxTimeStamp = Date.now();
         } else {
-            update.maxTimeStamp = graph.finished;
+            update.maxTimeStamp = graph.finished + (100 * 1 / this.state.pxPerMs);
         }
 
 
@@ -96,18 +129,12 @@ class GraphTimeline extends React.Component {
                 }   // both completed
                 return ((a.started > b.started) && (a.started < b.completed)) ||
                     ((a.completed > b.started) && (a.completed < b.completed));
-
             }
-
-
         }
 
 
         // rank_id -> Map[stage_id] - stage
         var ranks = [];
-        var currentMax = 0;
-
-//        var lastMax = null;
 
         function findRank(stage_id) {
             for (let rank in ranks) {
@@ -122,14 +149,12 @@ class GraphTimeline extends React.Component {
             .forEach(
                 (node) => {
                     // hidden nodes
-                    switch (node.op
-                        ) {
-                        case 'completedValue':
-                        case'externalFuture':
-                            return;
+                    if (node.started == node.completed) {
+                        return;
                     }
 
-                    var minRank = -1;
+
+                    let minRank = -1;
                     // Never place dependent nodes above their parents
                     node.dependencies.forEach((stage_id) => {
                         minRank = Math.max(minRank, findRank(stage_id))
@@ -171,28 +196,29 @@ class GraphTimeline extends React.Component {
         update.pendingNodes = pendingNodes;
         update.activeNodes = activeNodes;
 
-        let graphHeight = Math.max(this.state.height, this.state.nodeHeight * (ranks.length));
+        let graphHeight = Math.max(this.state.viewPortHeight, this.state.nodeHeight * (ranks.length));
         update.graphHeight = graphHeight;
-        let maxScroll = Math.max(0, graphHeight - this.state.height);
+        let maxScroll = Math.max(0, graphHeight - this.state.viewPortHeight);
         update.maxScroll = maxScroll;
-        var dependenciesOfSelected = new Set();
+        let selectedDeps = new Set();
         if (this.state.selectedNode && (this.state.selectedNode.state !== 'graph')) {
-            dependenciesOfSelected = this.state.graph.findDepIds(this.state.selectedNode.stage_id);
-            dependenciesOfSelected.add(this.state.selectedNode.stage_id);
+            selectedDeps = this.state.graph.findDepIds(this.state.selectedNode.stage_id);
+            selectedDeps.add(this.state.selectedNode.stage_id);
         }
 
-        update.dependenciesOfSelected = dependenciesOfSelected;
+        update.selectedDeps = selectedDeps;
         if (maxScroll > 0) {
-            update.scrollBarHeight = this.state.height * (this.state.height / graphHeight);
+            update.scrollBarHeight = this.state.viewPortHeight * (this.state.viewPortHeight / graphHeight);
         } else {
-            update.scrollBarHeight = this.state.height;
+            update.scrollBarHeight = this.state.viewPortHeight;
         }
 
         this.setState(update);
     }
 
     componentDidMount() {
-        this.startWatch()
+        this.updateDimensions();
+        this.startWatch();
     }
 
     manualScrollX(ts) {
@@ -200,7 +226,7 @@ class GraphTimeline extends React.Component {
     }
 
     manualScrollY(s) {
-        console.log("Scroll: ", s);
+        //console.log("Scroll: ", s);
         this.setState({autoScroll: false, verticalScrollRatio: s});
     }
 
@@ -258,8 +284,8 @@ class GraphTimeline extends React.Component {
         let listeners = {};
         listeners.moveListener = (wmme) => {
             let deltaY = wmme.screenY - this.state.dragStartY;
-            let maxScrollPosition = this.state.height - this.state.scrollBarHeight;
-            let inverted = this.state.scrollBarHeight / (this.state.height - this.state.verticalScrollPosition);
+            let maxScrollPosition = this.state.viewPortHeight - this.state.scrollBarHeight;
+            let inverted = this.state.scrollBarHeight / (this.state.viewPortHeight - this.state.verticalScrollPosition);
 
             let newScrollPosition = this.state.verticalScrollPosition + (deltaY / inverted);
             newScrollPosition = Math.min(newScrollPosition, maxScrollPosition);
@@ -299,7 +325,6 @@ class GraphTimeline extends React.Component {
                                       position: 'absolute',
                                       height: '20px',
                                       top: '0px',
-                                      left: (this.state.viewPortWidth + 6) + 'px',
                                       color: 'grey'
                                   }}
         > Pending Events: </div>)];
@@ -309,7 +334,7 @@ class GraphTimeline extends React.Component {
         this.state.activeNodes.forEach((node, idx) => {
             let createTs = relativeX(node.created);
 
-            if(!this.state.rankMap.has(node.stage_id)){
+            if (!this.state.rankMap.has(node.stage_id)) {
                 // non-displayed stage.
                 return;
             }
@@ -324,7 +349,7 @@ class GraphTimeline extends React.Component {
             }
 
             if (this.state.selectedNode) {
-                if (this.state.dependenciesOfSelected.has(node.stage_id)) {
+                if (this.state.selectedDeps.has(node.stage_id)) {
                     styleExtra.push(styles.highlighted);
                 } else {
                     styleExtra.push(styles.faded);
@@ -416,7 +441,7 @@ class GraphTimeline extends React.Component {
                 left: '3px',
                 position: 'absolute',
                 height: '20px',
-                top: '' + (index * this.state.nodeHeight) + 'px',
+                top: '' + ((index+1)* this.state.nodeHeight) + 'px',
             };
             let pendElem = (<div key={node.stage_id + 1} className={styles.node + ' ' + styleExtra.join(' ')}
                                  style={pendingboxStyle}
@@ -427,22 +452,25 @@ class GraphTimeline extends React.Component {
         });
 
         let leftPosition;
-        if ((relativeX(this.state.maxTimeStamp) < this.state.wallPaperWidth)) {
+        if ((relativeX(this.state.maxTimeStamp) < this.state.viewPortWidth)) {
             leftPosition = {left: relativeX(this.state.maxTimeStamp), height: this.state.graphHeight + 'px'}
         } else {
             leftPosition = {visibility: 'hidden'};
         }
 
         return (
-            <div>
+            <div ref={(input) => {
+                this.containerElem = input;
+            }} style={{width: '100%'}}>
                 <div className={styles.overview}
                      style={{width: this.state.width + 'px', height: this.state.height + 'px'}}>
                     <div className={styles.viewport}
-                         style={{width: this.state.viewPortWidth + 'px', height: this.state.height + 'px'}}>
-                        <div className={styles.wallPaper} style={{
+                         style={{width: this.state.viewPortWidth + 'px', height: this.state.viewPortHeight + 'px'}}>
+
+                        <div className={styles.scrollingArea} style={{
                             left: -relativeX(this.state.cursorTs) + 'px',
-                            top: -this.state.verticalScrollRatio * Math.max(9, this.state.graphHeight - this.state.height) + 'px',
-                            width: this.state.wallPaperWidth + 'px',
+                            top: -this.state.verticalScrollRatio * Math.max(0, this.state.graphHeight - this.state.viewPortHeight) + 'px',
+                            width: Math.max(this.state.width, relativeX(this.state.maxTimeStamp) - relativeX(this.state.graph.created)) + 'px',
                             height: this.state.graphHeight + 'px'
                         }}>
                             <div className={styles.currentLine} style={leftPosition}>
@@ -451,9 +479,9 @@ class GraphTimeline extends React.Component {
                         </div>
 
                         <div className={styles.verticalScroll} style={{
-                            height: this.state.height + 'px',
+                            height: this.state.viewPortHeight + 'px',
                             left: (this.state.viewPortWidth - 25) + 'px', top: '0px', position: 'absolute',
-                            display: this.state.maxScroll===0?"none":"block"
+                            display: this.state.maxScroll === 0 ? "none" : "block"
                         }}>
                             <div className={styles.scrollbox} onMouseDown={this.onDragStart}
                                  style={{
@@ -464,20 +492,24 @@ class GraphTimeline extends React.Component {
                             </div>
                         </div>
                         <div className={styles.pendingView} style={{
-                            width: '174px', position: 'absolute',
-                            height: this.state.height + 'px', left: this.state.viewPortWidth + 'px', top: '0px'
+                            width: this.state.pendingWidth -3 + 'px', position: 'absolute',
+                            height: this.state.viewPortHeight + 'px', left: this.state.viewPortWidth -3 + 'px', top: '0px'
                         }}>
+
                             <div>{pendingElems}</div>
                         </div>
 
                     </div>
+
+                    <ZoomLine graph={this.state.graph}
+                              windowDurationMs={this.state.viewPortWidth / this.state.pxPerMs}
+                              cursorTs={this.state.cursorTs}
+                              maxTs={this.state.maxTimeStamp + 1000}
+                              live={this.state.live}
+                              height={this.state.zoomLineHeight -4}
+                              onScrollChanged={this.manualScrollX} width={this.state.viewPortWidth-3}/>
+
                 </div>
-                <ZoomLine graph={this.state.graph}
-                          windowDurationMs={this.state.viewPortWidth / this.state.pxPerMs}
-                          cursorTs={this.state.cursorTs}
-                          maxTs={this.state.maxTimeStamp}
-                          live={this.state.live}
-                          onScrollChanged={this.manualScrollX} width={this.state.viewPortWidth}/>
             </div>
         );
     }

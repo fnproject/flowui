@@ -1,0 +1,17 @@
+
+.content {
+    position:relative;
+    left:400px;
+    width: calc(100% - 400px);
+}
+
+.graphlist {
+
+    position:absolute;
+    min-height:1000px;
+    top:0px;
+    left:0px;
+    background-color:lightgray;
+    width:400px;
+    padding:10px;
+}

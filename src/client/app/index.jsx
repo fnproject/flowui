@@ -4,9 +4,9 @@ import {render} from 'react-dom';
 import Controller from './controller.js';
 import GraphTimeline from './GraphTimeline.jsx';
 import FnClient from './fnclient.js';
+import styles from './index.css'
 
 require('file-loader?name=[name].[ext]!./index.html');
-
 
 class App extends React.Component {
 
@@ -72,12 +72,12 @@ class App extends React.Component {
         }
 
         let live = true;
-        if(graph.completed){
-          live = false;
+        if (graph.completed) {
+            live = false;
         }
         return (
             <div>
-                <GraphTimeline graph={graph} width={1200} onNodeSelected={this.onNodeSelected} />
+                <GraphTimeline graph={graph} height='600' onNodeSelected={this.onNodeSelected}/>
             </div>
         );
     }
@@ -99,33 +99,33 @@ class App extends React.Component {
 
 
     onNodeSelected(graph, node) {
-      this.state.currentNode = node;
+        this.state.currentNode = node;
 
-      if((node != null) && (node.state !== 'graph')){
-        let deps = Array.from(graph.findDepIds(node.stage_id));
-        deps.reverse();
-        deps.push(node.stage_id);
+        if ((node != null) && (node.state !== 'graph')) {
+            let deps = Array.from(graph.findDepIds(node.stage_id));
+            deps.reverse();
+            deps.push(node.stage_id);
 
-        console.log(`node ${graph.graph_id}: ${node.stage_id} selected`);
+            console.log(`node ${graph.graph_id}: ${node.stage_id} selected`);
 
-        this.state.nodeLogs = new Map();
-        for(let item of deps){
-          let nodeDep = graph.getNode(item);
-          if (nodeDep.call_id) {
-              let index = nodeDep.function_id.indexOf("/");
-              let appId = nodeDep.function_id.substring(0, index);
-              this.state.fnclient.loadLogs(appId, nodeDep.call_id)
-                  .then((logs) => {
-                        if(logs != ""){
-                          this.state.nodeLogs.set(nodeDep, logs);
-                          this.setState(this.state);
-                        }
-                  }).catch((e) => {
-                    console.log("error loading logs: " + e.message);
-              })
-        }
-        }
-          this.setState(this.state);
+            this.state.nodeLogs = new Map();
+            for (let item of deps) {
+                let nodeDep = graph.getNode(item);
+                if (nodeDep.call_id) {
+                    let index = nodeDep.function_id.indexOf("/");
+                    let appId = nodeDep.function_id.substring(0, index);
+                    this.state.fnclient.loadLogs(appId, nodeDep.call_id)
+                        .then((logs) => {
+                            if (logs != "") {
+                                this.state.nodeLogs.set(nodeDep, logs);
+                                this.setState(this.state);
+                            }
+                        }).catch((e) => {
+                        console.log("error loading logs: " + e.message);
+                    })
+                }
+            }
+            this.setState(this.state);
         }
         this.setState(this.state);
     }
@@ -134,30 +134,31 @@ class App extends React.Component {
     render() {
         var graphListItems = [];
         this.state.controller.getKnownGraphs().forEach((graph) => {
-          let elem = (<div key={graph.data.graph_id}
-                           style={{padding:'10px', textAlign:'center',
-                           borderBottom: '3px double #CCCCCC'}}>
-                           <a href="#"
-                              onClick={() => this.onGraphSelected(graph.data.graph_id)}>{graph.data.function_id} {graph.data.graph_id}</a>
+            let elem = (<div key={graph.data.graph_id}
+                             style={{
+                                 padding: '10px', textAlign: 'center',
+                                 borderBottom: '3px double #CCCCCC'
+                             }}>
+                <a href="#"
+                   onClick={() => this.onGraphSelected(graph.data.graph_id)}>{graph.data.function_id} {graph.data.graph_id}</a>
 
-                     </div>);
+            </div>);
             graphListItems.push(elem);
         });
 
         return (
             <div>
-              <div style={{position:'absolute', minHeight:'1000px', top:'0px', left:'0px',
-                 backgroundColor:'lightgrey', width:'400px', padding:'10px',}}>
-                 {graphListItems}
-              </div>
-              <div>
-                <div style={{position:'relative',left:'400px'}}>
-                    {this.renderCurrentGraph()}
+                <div className={styles.graphlist}>
+                    {graphListItems}
                 </div>
-                <div style={{WebkitBoxAlign: 'center', WebkitBoxPack: 'center', display: '-webkit-box', height:'400px'}}>
-                    {this.renderCurrentNode()}
+                <div className={styles.content}>
+                    <div>
+                        {this.renderCurrentGraph()}
+                    </div>
+                    <div>
+                        {this.renderCurrentNode()}
+                    </div>
                 </div>
-              </div>
             </div>
         );
     }

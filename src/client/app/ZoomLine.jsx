@@ -17,10 +17,10 @@ class ZoomLine extends React.Component {
             width: props.width,
             live: props.live,
             minScale: props.minScale,
-            dragging:false,
+            dragging: false,
             dragStartX: 0,
             stopped: false,
-            height: 100,
+            height: props.height,
             scrollBoxWidth: props.width
         };
         this.onDragStart = this.onDragStart.bind(this);
@@ -28,75 +28,67 @@ class ZoomLine extends React.Component {
     }
 
     componentWillReceiveProps(props) {
-        // console.log("new props",props);
 
-        this.state.windowDurationMs = props.windowDurationMs;
-        this.state.maxTs = props.maxTs;
-        this.state.cursorTs = props.cursorTs;
-        this.state.live = props.live;
-        this.state.graph = props.graph;
-
-        this.setState(this.state);
+        this.setState(props);
     }
 
     componentDidMount() {
     }
 
-    relativeX(timeStamp){
-      var minTs = this.state.graph.created;
-      const maxTs = this.state.graph.finished ? this.state.graph.finished : Date.now();
-      let  curDurationTs = (maxTs - this.state.graph.created) ;
-      if (curDurationTs < this.state.windowDurationMs){
-        return (timeStamp - minTs) * this.state.width/(this.state.windowDurationMs);
-      }else {
-        this.state.stopped = true;
-        return (timeStamp - minTs) * this.state.width/curDurationTs;
-      }
-    }
-
-    onDragStart(e){
-      //.log("Dragging: ",e);
-      this.state.dragging = true;
-      this.state.dragStartX = e.screenX;
-      let listeners = {};
-      listeners.moveListener = (wmme)=>{
-        let deltaX = wmme.screenX - this.state.dragStartX ;
-        let inverted;
-
-        let minCursorTs = this.state.graph.created;
+    relativeX(timeStamp) {
+        var minTs = this.state.graph.created;
         const maxTs = this.state.graph.finished ? this.state.graph.finished : Date.now();
-        const maxCursorTs = maxTs - this.state.windowDurationMs;
-        let  curDurationTs = (maxTs - minCursorTs) ;
-        if (curDurationTs < this.state.windowDurationMs){
-          inverted = (this.state.windowDurationMs)/this.state.width;
-        }else {
-          inverted = this.state.width/curDurationTs;
+        let curDurationTs = (maxTs - this.state.graph.created);
+        if (curDurationTs < this.state.windowDurationMs) {
+            return (timeStamp - minTs) * this.state.width / (this.state.windowDurationMs);
+        } else {
+            this.state.stopped = true;
+            return (timeStamp - minTs) * this.state.width / curDurationTs;
         }
-
-        let newCursorTs = this.state.cursorTs   +  (deltaX / inverted);
-        newCursorTs= Math.min(newCursorTs,maxCursorTs);
-        newCursorTs= Math.max(newCursorTs,minCursorTs);
-        this.state.cursorTs = newCursorTs;
-
-        this.state.onScrollChanged(newCursorTs);
-        this.state.dragStartX = wmme.screenX;
-          // this.setState(this.state);
-
-      };
-      listeners.moveListener = listeners.moveListener.bind(this);
-
-      document.addEventListener('mousemove',listeners.moveListener);
-
-      listeners.upListener = (wmu)=>{
-          // console.log("Done!!!",wmu);
-          this.state.dragging= false;
-          document.removeEventListener('mousemove',listeners.moveListener);
-          document.removeEventListener('mouseup',listeners.upListener);
-      };
-
-      document.addEventListener('mouseup',listeners.upListener);
     }
 
+    onDragStart(e) {
+        //.log("Dragging: ",e);
+        this.state.dragging = true;
+        this.state.dragStartX = e.screenX;
+        let listeners = {};
+        listeners.moveListener = (wmme) => {
+            let deltaX = wmme.screenX - this.state.dragStartX;
+            let inverted;
+
+            let minCursorTs = this.state.graph.created;
+            const maxTs = this.state.graph.finished ? this.state.graph.finished : Date.now();
+            const maxCursorTs = maxTs - this.state.windowDurationMs;
+            let curDurationTs = (maxTs - minCursorTs);
+            if (curDurationTs < this.state.windowDurationMs) {
+                inverted = (this.state.windowDurationMs) / this.state.width;
+            } else {
+                inverted = this.state.width / curDurationTs;
+            }
+
+            let newCursorTs = this.state.cursorTs + (deltaX / inverted);
+            newCursorTs = Math.min(newCursorTs, maxCursorTs);
+            newCursorTs = Math.max(newCursorTs, minCursorTs);
+            this.state.cursorTs = newCursorTs;
+
+            this.state.onScrollChanged(newCursorTs);
+            this.state.dragStartX = wmme.screenX;
+            // this.setState(this.state);
+
+        };
+        listeners.moveListener = listeners.moveListener.bind(this);
+
+        document.addEventListener('mousemove', listeners.moveListener);
+
+        listeners.upListener = (wmu) => {
+            // console.log("Done!!!",wmu);
+            this.state.dragging = false;
+            document.removeEventListener('mousemove', listeners.moveListener);
+            document.removeEventListener('mouseup', listeners.upListener);
+        };
+
+        document.addEventListener('mouseup', listeners.upListener);
+    }
 
 
     render() {
@@ -139,14 +131,14 @@ class ZoomLine extends React.Component {
 
         var runningCount = running.length;
         running.forEach((rnode, i) => {
-            if(rnode.completed){
-                runningCount-=1;
+            if (rnode.completed) {
+                runningCount -= 1;
                 linePoints.push([rnode.completed, runningCount]);
             }
         });
 
-        if(runningCount > 0){
-            linePoints.push([Date.now(),runningCount]);
+        if (runningCount > 0) {
+            linePoints.push([Date.now(), runningCount]);
         }
 
         const maxCount = linePoints.reduce((v, e) => Math.max(v, e[1]), 0);
@@ -162,16 +154,16 @@ class ZoomLine extends React.Component {
             lastPoint = lp;
         });
 
-        let  curDurationTs = (maxTs - this.state.graph.created) ;
+        let curDurationTs = (maxTs - this.state.graph.created);
 
-        if (curDurationTs < this.state.windowDurationMs){
-          this.state.scrollBoxWidth = this.state.width;
-        }else{
-          this.state.scrollBoxWidth = this.state.windowDurationMs * (this.state.width/curDurationTs);
+        if (curDurationTs < this.state.windowDurationMs) {
+            this.state.scrollBoxWidth = this.state.width;
+        } else {
+            this.state.scrollBoxWidth = this.state.windowDurationMs * (this.state.width / curDurationTs);
         }
 
         let relativeY = function (count) {
-            var  minMax = Math.max(maxCount,4);
+            var minMax = Math.max(maxCount, 4);
             return count * (this.state.height / minMax);
 
         };
@@ -190,44 +182,46 @@ class ZoomLine extends React.Component {
         });
 
         var leftShadeStyle = {
-          left: '0px',
-          width:  this.relativeX(this.state.cursorTs) - this.relativeX(this.state.graph.created) ,
-          height: this.state.height + 'px'
+            left: '0px',
+            width: this.relativeX(this.state.cursorTs) - this.relativeX(this.state.graph.created),
+            height: this.state.height + 'px'
         };
 
-        var rightShadeLeftPx= this.relativeX(this.state.cursorTs) + this.state.scrollBoxWidth;
+        var rightShadeLeftPx = this.relativeX(this.state.cursorTs) + this.state.scrollBoxWidth;
         var rightShadeWidth = this.state.width - rightShadeLeftPx;
 
         var rightShadeStyle = {
-          left: rightShadeLeftPx + 'px',
-          width:  rightShadeWidth + 'px',
-          height: this.state.height + 'px'
+            left: rightShadeLeftPx + 'px',
+            width: rightShadeWidth + 'px',
+            height: this.state.height + 'px'
         };
 
         let leftPosition;
-        if(this.state.stopped){
-          leftPosition = {visibility:'hidden'};
-        } else if(this.state.graph.isLive()){
-          leftPosition = {left:this.relativeX(Date.now())};
+        if (this.state.stopped) {
+            leftPosition = {visibility: 'hidden'};
+        } else if (this.state.graph.isLive()) {
+            leftPosition = {left: this.relativeX(Date.now())};
         } else {
-          leftPosition = {left:this.relativeX(graph.finished)};
+            leftPosition = {left: this.relativeX(graph.finished)};
         }
         // console.log("CursorTs: " + this.state.cursorTs + ", Start: " + this.state.graph.created);
         //console.log(linePoints);
         return (<div>
-            <div style={{
-                position: 'relative',
-                width: this.state.width + 'px',
-                height: this.state.height + "px",
-                border: "3px solid black",
-                borderTop: "0px"
-            }} className={styles.viewport}>
+            <div className={styles.zoomline}
+                 style={{
+                     width: this.state.width + 'px',
+                     height: this.state.height + "px",
+                 }}>
                 {elems}
-                <div className={styles.scrollboxshade} style={leftShadeStyle}> </div>
-                <div  onMouseDown={this.onDragStart} className={styles.scrollbox} style={{height: this.state.height + "px", left:this.relativeX(this.state.cursorTs)+ 'px', width:this.state.scrollBoxWidth + 'px'}}> </div>
-                  <div className={styles.scrollboxshade} style={rightShadeStyle}> </div>
-                    <div className={styles.currentLine} style={leftPosition}>
-                      </div>
+                <div className={styles.scrollboxshade} style={leftShadeStyle}></div>
+                <div onMouseDown={this.onDragStart} className={styles.scrollbox} style={{
+                    height: this.state.height + "px",
+                    left: this.relativeX(this.state.cursorTs) + 'px',
+                    width: this.state.scrollBoxWidth + 'px'
+                }}></div>
+                <div className={styles.scrollboxshade} style={rightShadeStyle}></div>
+                <div className={styles.currentLine} style={leftPosition}>
+                </div>
             </div>
         </div>)
     }

@@ -1,34 +1,42 @@
 
-.wallPaper {
-  position: relative;
-  background-color: #f9f9f9;
+.scrollingArea {
+    position: relative;
+    background-color: #f9f9f9;
+    overflow: hidden;
+
 }
 
 .overview {
-  position: relative;
-  overflow: hidden;
-  border: 3px solid black;
+    position: relative;
+    overflow: hidden;
+    border-top: 3px solid black;
+    border-left: 3px solid black;
 }
 
 .pendingView {
-  background-image: url('./pending_area.png');
-  border-left: 3px solid black;
+    background-image: url('./pending_area.png');
+    border-left: 3px solid black;
+    border-bottom: 3px solid black;
+    border-right: 3px solid black;
+
+    overflow: hidden;
+
 }
 
 .verticalScroll {
-  background-color: lightgrey;
-  opacity: 0.2;
-  border-left: 1px solid black;
-  z-index: 4;
-  width: 25px;
+    background-color: lightgrey;
+    opacity: 0.2;
+    border-left: 1px solid black;
+    z-index: 4;
+    width: 25px;
 }
 
 .scrollbox {
-  width: 25px;
-  background-color: black;
-  opacity: 0.6;
-  border-radius: 8px;
-  cursor: -webkit-grab;
+    width: 25px;
+    background-color: black;
+    opacity: 0.6;
+    border-radius: 8px;
+    cursor: -webkit-grab;
 
 }
 
@@ -36,22 +44,22 @@
     overflow: hidden;
 }
 
-.currentLine{
-  position: relative;
-  top: 0px;
-  width: 4px;
-  background-color: lightgrey;
+.currentLine {
+    position: relative;
+    top: 0px;
+    width: 4px;
+    background-color: lightgrey;
 }
 
-.node{
+.node {
     border-radius: 3px;
-    border:1px solid grey;
-    margin:0px;
-    cursor:pointer;
+    border: 1px solid grey;
+    margin: 0px;
+    cursor: pointer;
     white-space: pre;
-    font-size:10pt;
-    overflow:hidden;
-    box-shadow: 3px 3px 5px 0px rgba(0,0,0,0.25);
+    font-size: 10pt;
+    overflow: hidden;
+    box-shadow: 3px 3px 5px 0px rgba(0, 0, 0, 0.25);
 }
 
 .node.successful {
@@ -63,41 +71,44 @@
 }
 
 @keyframes animatedBackground {
-    from { background-position: 0 0; }
-    to { background-position: 100% 0; }
+    from {
+        background-position: 0 0;
+    }
+    to {
+        background-position: 100% 0;
+    }
 }
 
-
 .createnode {
-    border-left:2px solid lightgray;
+    border-left: 2px solid lightgray;
     z-index: 2;
 }
 
 .hdepline {
-    height:1px;
+    height: 1px;
     border-top: 1px dashed lightgray;
     z-index: 1;
 }
 
-.node.selected{
+.node.selected {
     outline: none;
     border-color: #9ecaed;
     box-shadow: 0 0 10px #9ecaed;
 }
 
 .node.successful.highlighted {
-  background-color: #00ff00;
-  border: 1px solid #00cc00;
+    background-color: #00ff00;
+    border: 1px solid #00cc00;
 }
 
 .node.failed.highlighted {
-  background-color: #ff0000;
-  border: 1px solid #cc0000;
+    background-color: #ff0000;
+    border: 1px solid #cc0000;
 }
 
 .node.faded {
-  background-color: lightgrey;
-  opacity: 0.3;
+    background-color: lightgrey;
+    opacity: 0.3;
 }
 
 .node.pending {
@@ -119,68 +130,67 @@
 }
 
 .node.lifecycle {
-  background-color: lightblue;
-  background-position: 0px 0px;
-  border-top-left-radius: 0px;
-  border-bottom-left-radius: 0px;
+    background-color: lightblue;
+    background-position: 0px 0px;
+    border-top-left-radius: 0px;
+    border-bottom-left-radius: 0px;
 }
 
-
 .node.invokeFunction {
-    border:2px solid darkblue;
+    border: 2px solid darkblue;
     background: lightblue;
 }
 
 [data-tooltip] {
-  position: relative;
-  z-index: 4;
-  cursor: pointer;
+    position: relative;
+    z-index: 4;
+    cursor: pointer;
 }
 
 /* Hide the tooltip content by default */
 [data-tooltip]:before,
 [data-tooltip]:after {
-  visibility: hidden;
+    visibility: hidden;
 }
 
 /* Position tooltip above the element */
 [data-tooltip]:before {
-  display: block;
-  position: absolute;
-  bottom: 150%;
-  left: 50%;
-  margin-bottom: 5px;
-  margin-left: -80px;
-  padding: 7px;
-  border-radius: 3px;
-  background-color: #000;
-  background-color: hsla(0, 0%, 20%, 0.9);
-  color: #fff;
-  content: attr(data-tooltip);
-  text-align: center;
-  font-size: 14px;
-  line-height: 1.2;
-  white-space: pre-wrap;
+    display: block;
+    position: absolute;
+    bottom: 150%;
+    left: 50%;
+    margin-bottom: 5px;
+    margin-left: -80px;
+    padding: 7px;
+    border-radius: 3px;
+    background-color: #000;
+    background-color: hsla(0, 0%, 20%, 0.9);
+    color: #fff;
+    content: attr(data-tooltip);
+    text-align: center;
+    font-size: 14px;
+    line-height: 1.2;
+    white-space: pre-wrap;
 }
 
 /* Triangle hack to make tooltip look like a speech bubble */
 [data-tooltip]:after {
-  position: absolute;
-  bottom: 150%;
-  left: 50%;
-  margin-left: -5px;
-  width: 0;
-  border-top: 5px solid #000;
-  border-top: 5px solid hsla(0, 0%, 20%, 0.9);
-  border-right: 5px solid transparent;
-  border-left: 5px solid transparent;
-  content: " ";
-  font-size: 0;
-  line-height: 0;
+    position: absolute;
+    bottom: 150%;
+    left: 50%;
+    margin-left: -5px;
+    width: 0;
+    border-top: 5px solid #000;
+    border-top: 5px solid hsla(0, 0%, 20%, 0.9);
+    border-right: 5px solid transparent;
+    border-left: 5px solid transparent;
+    content: " ";
+    font-size: 0;
+    line-height: 0;
 }
 
 /* Show tooltip content on hover */
 [data-tooltip]:hover:before,
 [data-tooltip]:hover:after {
-  visibility: visible;
+    visibility: visible;
 }
