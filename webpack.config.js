@@ -31,7 +31,23 @@ var config = {
                     ]
                 }
             ]
+        },
+
+    devServer: {
+        /* Send API requests on localhost to API server get around CORS */
+        proxy: {
+            '/fn': {
+                target:'http://localhost:8080/',
+                pathRewrite: {"^/fn" : ""}
+
+            },
+            '/completer': {
+                target:'http://localhost:8081/',
+                pathRewrite: {"^/completer" : ""}
+
+            },
         }
+    }
     }
 ;
 

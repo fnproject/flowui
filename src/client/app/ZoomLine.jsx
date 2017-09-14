@@ -202,7 +202,7 @@ class ZoomLine extends React.Component {
         } else if (this.state.graph.isLive()) {
             leftPosition = {left: this.relativeX(Date.now())};
         } else {
-            leftPosition = {left: this.relativeX(graph.finished)};
+            leftPosition = {left: this.relativeX(this.state.graph.finished)};
         }
         // console.log("CursorTs: " + this.state.cursorTs + ", Start: " + this.state.graph.created);
         //console.log(linePoints);

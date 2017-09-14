@@ -18,7 +18,6 @@
     border-left: 3px solid black;
     border-bottom: 3px solid black;
     border-right: 3px solid black;
-
     overflow: hidden;
 
 }
@@ -120,13 +119,13 @@
 }
 
 .node.running {
+
+    border-top-right-radius: 0px;
+    border-bottom-right-radius: 0px;
     background-image: url('./stripe_run.png');
     background-position: 0px 0px;
     background-repeat: repeat;
-    border-top-right-radius: 0px;
-    border-bottom-right-radius: 0px;
     animation: animatedBackground 10s linear infinite;
-    width: 1024px;
 }
 
 .node.lifecycle {

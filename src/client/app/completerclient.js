@@ -4,7 +4,7 @@ class CompleterWsClient {
     constructor(receiver) {
         this.receiver = receiver;
 
-        let wsUrl = "ws://localhost:8081/wss";
+        let wsUrl = "ws://"+location.host+"/completer/wss";
         console.log("connecting to ws: ", wsUrl);
 
         this.ws =   new WebSocket(wsUrl);

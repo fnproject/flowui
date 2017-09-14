@@ -30,7 +30,7 @@ class App extends React.Component {
             }
         });
 
-        this.state.fnclient = new FnClient("http://localhost:8080");
+        this.state.fnclient = new FnClient("/fn");
 
 
         this.onGraphSelected = this.onGraphSelected.bind(this);
@@ -77,7 +77,7 @@ class App extends React.Component {
         }
         return (
             <div>
-                <GraphTimeline graph={graph} height='600' onNodeSelected={this.onNodeSelected}/>
+                <GraphTimeline graph={graph} height='500' onNodeSelected={this.onNodeSelected}/>
             </div>
         );
     }
@@ -100,6 +100,7 @@ class App extends React.Component {
 
     onNodeSelected(graph, node) {
         this.state.currentNode = node;
+        this.setState({currentNode: node});
 
         if ((node != null) && (node.state !== 'graph')) {
             let deps = Array.from(graph.findDepIds(node.stage_id));
@@ -111,23 +112,24 @@ class App extends React.Component {
             this.state.nodeLogs = new Map();
             for (let item of deps) {
                 let nodeDep = graph.getNode(item);
+                this.state.nodeLogs.set(nodeDep, null);
+                this.setState({nodeLogs: this.state.nodeLogs});
                 if (nodeDep.call_id) {
                     let index = nodeDep.function_id.indexOf("/");
                     let appId = nodeDep.function_id.substring(0, index);
                     this.state.fnclient.loadLogs(appId, nodeDep.call_id)
                         .then((logs) => {
-                            if (logs != "") {
+                            if (logs !== "") {
                                 this.state.nodeLogs.set(nodeDep, logs);
-                                this.setState(this.state);
+                                this.setState({nodeLogs: this.state.nodeLogs});
                             }
                         }).catch((e) => {
                         console.log("error loading logs: " + e.message);
+                        throw e;
                     })
                 }
             }
-            this.setState(this.state);
         }
-        this.setState(this.state);
     }
 
     // Please note this currently only works for the first graph you create

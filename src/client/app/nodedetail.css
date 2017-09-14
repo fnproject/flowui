@@ -1,22 +1,56 @@
 
-.console {
-  font-family: Courier;
-  font-size: 18;
+.logHeader {
+  width: 700px;
+  font-weight:bold;
+  border: 1px solid rgba(0,0,0, 0.25);
+}
+
+@keyframes animatedBackground {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 100% 0;
+  }
+}
+.rightHeader {
+  float:right;
+}
+.running {
+  background-image: url('./stripe_run.png');
+  background-position: 0px 0px;
+  background-repeat: repeat;
+  animation: animatedBackground 10s linear infinite;
+}
+.pending {
+  background-image: url('./pending_area.png');
+}
+
+.successful {
+  background-color: lightgreen;
+}
+.failed {
+  background-color: lightcoral;
+
+}
+.nodeInfoBox{
+  width:calc(100% - 400px);
+}
+.logEntry {
+  width: 700px;
+  font-family: Courier, serif;
+  font-size: 12pt;
   color: #CCCCCC;
   background: #000000;
   border: 3px double #CCCCCC;
   overflow: auto;
   white-space: pre-wrap;
-  flex: 1;
-  margin: 10px;
-  margin-left: 0px;
-  margin-right: 0px;
   z-index: 2;
-  padding: 10px;
 }
 
 .nodeInfo {
   margin: 10px;
+  min-width: 400px;
   flex: 1;
   flex-wrap: wrap;
 }

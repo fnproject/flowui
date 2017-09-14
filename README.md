@@ -1,12 +1,24 @@
-# Cloud Threads UI 
+# FnFlow  UI  
 
 
-This is a demoware visualisation tool for showing what's going on with cloud threads in real time. 
+This is a demoware visualisation tool for showing what's going on with FnFlow in real time. 
 
+# Running with docker
 
-## running: 
+Assuming you are already running fn server on port 8080 and completer on port 8081 in docker: 
 
-You need nodejs (tested with 7.8.0)
+Grab the internal docker network IP 
+```bash
+export DOCKER_LOCALHOST=$(docker inspect --type container -f '{{.NetworkSettings.Gateway}}' functions)
+```
+
+```bash 
+docker run   -p3000:3000 -e API_URL=http://$DOCKER_LOCALHOST:8080 -e COMPLETER_BASE_URL=http://$DOCKER_LOCALHOST:8081 fnproject/completer:ui
+```
+
+## running locally 
+
+You need nodejs (tested with 8.5.0)
 
 this assumes that the completer is running on 127.0.0.1:8081 and the corresponding functions server is running on 8081
 
