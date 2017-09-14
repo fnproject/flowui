@@ -23,7 +23,7 @@ class GraphTimeline extends React.Component {
             viewPortHeight: props.height - 100,
 
             height: props.height,
-            pxPerMs: 0.03,
+            pxPerMs: 0.06,
             graphHeight: 0,
             dragging: false,
             dragStartY: 0,
@@ -45,6 +45,7 @@ class GraphTimeline extends React.Component {
         this.manualScrollX = this.manualScrollX.bind(this);
         this.onDragStart = this.onDragStart.bind(this);
         this.updateDimensions = this.updateDimensions.bind(this);
+        this.isNodeShownByDefault = this.isNodeShownByDefault.bind(this);
     }
 
 
@@ -72,28 +73,46 @@ class GraphTimeline extends React.Component {
     };
     componentWillReceiveProps(props) {
         if (props.graph) {
+
             this.updateGraphDetails(props.graph)
+
         }
         this.updateDimensions();
         window.addEventListener("resize", this.debounce(this.updateDimensions,100));
 
     }
 
+    // show  this node from the default view  - hides messy no-op nodes that break vertical density  (TODO remove this when we have parent-heritage)
+    isNodeShownByDefault(node){
+        return node.started !== node.completed;
+
+    }
+
     updateGraphDetails(graph) {
+
+        var newGraph = graph !== this.state.graph;
+        let update = {graph};
+
+        if(newGraph){
+            console.log("New graph selected");
+            update.cursorTs = graph.created;
+            this.startWatch();
+        }
+
+
         const maxTs = graph.isLive() ? Date.now() : graph.finished;
         let curDurationTs = (maxTs - graph.created);
 
-        let update = {graph};
 
         if (this.state.autoScroll && curDurationTs > (this.state.viewPortWidth / this.state.pxPerMs)) {
-            update.cursorTs = this.state.graph.created + (curDurationTs - (this.state.viewPortWidth / this.state.pxPerMs));
+            update.cursorTs = graph.created + (curDurationTs - (this.state.viewPortWidth / this.state.pxPerMs));
             update.verticalScrollRatio = 1.0;
         }
 
         if (graph.isLive()) {
             update.maxTimeStamp = Date.now();
         } else {
-            update.maxTimeStamp = graph.finished + (100 * 1 / this.state.pxPerMs);
+            update.maxTimeStamp = graph.finished ;
         }
 
 
@@ -113,6 +132,8 @@ class GraphTimeline extends React.Component {
         });
 
 
+        // TODO move to node class
+        // TODO make node class
         function nodesConflict(a, b) {
             if ((a.state === 'running' && b.state === 'running')) {
                 return true;
@@ -149,10 +170,7 @@ class GraphTimeline extends React.Component {
             .forEach(
                 (node) => {
                     // hidden nodes
-                    if (node.started == node.completed) {
-                        return;
-                    }
-
+                    var shown = this.isNodeShownByDefault(node);
 
                     let minRank = -1;
                     // Never place dependent nodes above their parents
@@ -163,14 +181,18 @@ class GraphTimeline extends React.Component {
                     //console.log("min rank for " + node.stage_id + " " +minRank);
                     // no precendence here - put this on a new rank
                     if (minRank === -1) {
-                        let rankMap = new Map();
-                        rankMap.set(node.stage_id, node);
-                        ranks.push(rankMap);
+                        if(!shown && ranks.length > 0){
+                            ranks[ranks.length-1].set(node.stage_id, node);
+                        }else{
+                            let rankMap = new Map();
+                            rankMap.set(node.stage_id, node);
+                            ranks.push(rankMap);
+                        }
                     } else {
                         // if this is an invisible node, just dump it at its parent rank
                         if (!(node.op === 'completedValue' || node.op === 'externalFuture')) {
                             for (let [id, other] of ranks[minRank]) {
-                                if (nodesConflict(node, other)) {
+                                if (shown &&  this.isNodeShownByDefault(other) && nodesConflict(node, other)) {
                                     // not free push this node to a new rank below min rank
                                     let rankMap = new Map();
                                     rankMap.set(node.stage_id, node);
@@ -277,7 +299,7 @@ class GraphTimeline extends React.Component {
         </div>);
     }
 
-//TODO: Fix newScrollPosition so it's neither laggy or jumpy
+    // TODO: Use somebody elses scroll bar.
     onDragStart(e) {
         this.state.dragging = true;
         this.state.dragStartY = e.screenY;
@@ -332,6 +354,8 @@ class GraphTimeline extends React.Component {
         let nodeElements = [];
 
         this.state.activeNodes.forEach((node, idx) => {
+
+
             let createTs = relativeX(node.created);
 
             if (!this.state.rankMap.has(node.stage_id)) {
@@ -341,15 +365,16 @@ class GraphTimeline extends React.Component {
             let rank = this.state.rankMap.get(node.stage_id);
 
 
-            var styleExtra = [];
+            let styleExtra = [];
             if (node.op === 'invokeFunction') {
                 styleExtra.push(styles.invokeFunction);
             } else if (node.op === 'main') {
                 styleExtra.push(styles.lifecycle);
             }
-
+            var displayNode = this.isNodeShownByDefault(node);
             if (this.state.selectedNode) {
                 if (this.state.selectedDeps.has(node.stage_id)) {
+                    displayNode=true;
                     styleExtra.push(styles.highlighted);
                 } else {
                     styleExtra.push(styles.faded);
@@ -411,15 +436,18 @@ class GraphTimeline extends React.Component {
             } else {
                 nodeLabel = node.op;
             }
-            nodeElements.push(<div key={node.stage_id + 1}>
-                    {waitElem}
-                    <div className={styles.node + ' ' + styleExtra.join(' ')}
-                         style={runboxStyle}
-                         onClick={(e) => this.selectNode(node)}
-                         data-tooltip={node.op + ": " + node.state + "\n" + deps}
-                    > {node.stage_id}: {nodeLabel} {durationMs ? (durationMs.toFixed(0) + 'ms') : ""}</div>
-                </div>
-            );
+
+            if(displayNode) {
+                nodeElements.push(<div key={node.stage_id + 1}>
+                        {waitElem}
+                        <div className={styles.node + ' ' + styleExtra.join(' ')}
+                             style={runboxStyle}
+                             onClick={(e) => this.selectNode(node)}
+                             data-tooltip={node.op + ": " + node.state + "\n" + deps}
+                        > {node.stage_id}: {nodeLabel} {durationMs ? (durationMs.toFixed(0) + 'ms') : ""}</div>
+                    </div>
+                );
+            }
 
         });
 

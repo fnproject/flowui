@@ -6,7 +6,7 @@ import CompleterWsClient from "./completerclient";
 
 class Controller {
 
-    constructor(onChanged, mock) {
+    constructor(onChanged) {
         this.known_graphs = new Set();
         this.active_graphs = new Map();
 

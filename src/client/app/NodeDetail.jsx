@@ -26,7 +26,7 @@ class NodeDetail extends React.Component {
     formatTime(timeStamp) {
 
         var date = new Date(timeStamp);
-        return date.toTimeString();
+        //return date.toTimeString();
         var hours = "0" + date.getHours();
         var minutes = "0" + date.getMinutes();
         var seconds = "0" + date.getSeconds();
