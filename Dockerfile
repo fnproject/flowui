@@ -1,4 +1,4 @@
-FROM node:8.5.0 as buildserver
+FROM node:8.5.0
 
 ENV TINI_VERSION v0.16.1
 ADD https://github.com/krallin/tini/releases/download/${TINI_VERSION}/tini /tini
