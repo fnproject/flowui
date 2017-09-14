@@ -73,7 +73,9 @@ class GraphTimeline extends React.Component {
     };
     componentWillReceiveProps(props) {
         if (props.graph) {
+
             this.updateGraphDetails(props.graph)
+
         }
         this.updateDimensions();
         window.addEventListener("resize", this.debounce(this.updateDimensions,100));
@@ -87,13 +89,23 @@ class GraphTimeline extends React.Component {
     }
 
     updateGraphDetails(graph) {
+
+        var newGraph = graph !== this.state.graph;
+        let update = {graph};
+
+        if(newGraph){
+            console.log("New graph selected");
+            update.cursorTs = graph.created;
+            this.startWatch();
+        }
+
+
         const maxTs = graph.isLive() ? Date.now() : graph.finished;
         let curDurationTs = (maxTs - graph.created);
 
-        let update = {graph};
 
         if (this.state.autoScroll && curDurationTs > (this.state.viewPortWidth / this.state.pxPerMs)) {
-            update.cursorTs = this.state.graph.created + (curDurationTs - (this.state.viewPortWidth / this.state.pxPerMs));
+            update.cursorTs = graph.created + (curDurationTs - (this.state.viewPortWidth / this.state.pxPerMs));
             update.verticalScrollRatio = 1.0;
         }
 
@@ -157,7 +169,6 @@ class GraphTimeline extends React.Component {
         activeNodes
             .forEach(
                 (node) => {
-                    console.log("Placing ", node.stage_id);
                     // hidden nodes
                     var shown = this.isNodeShownByDefault(node);
 
