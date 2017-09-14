@@ -7,7 +7,16 @@ const mockActiveGraphEvents=[
 			"function_id": "travel/saga",
 			"ts": "2017-09-14T13:24:58.141768562Z"
 		}
-	}
+	},
+    {
+        "type": "model.GraphCreatedEvent",
+        "sub": "_all",
+        "data": {
+            "graph_id": "1aa07def-7796-41e7-8f2d-fa1bc29566e4",
+            "function_id": "myapp/flow",
+            "ts": "2017-09-14T00:01:10.770984343Z"
+        }
+    }
 ];
 
 const mockSubscriptionData= {
@@ -603,6 +612,7 @@ const mockSubscriptionData= {
 				"ts": "2017-09-14T13:25:03.195794187Z"
 			}
 		}
-	]
+	],
+
 };
    export {mockActiveGraphEvents,mockSubscriptionData} ;
