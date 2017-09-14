@@ -1,0 +1,16 @@
+
+html { display: block; }
+
+body {
+    background-image: url('./background.png');
+    display: block;
+    margin: 8px;
+    padding: 30px;
+}
+
+h1 { font-family: Trebuchet Ms; }
+
+#app > div {
+    font-family:    Trebuchet Ms;
+    font-size:      20px;
+}
