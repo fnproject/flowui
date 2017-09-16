@@ -13,9 +13,17 @@
     background-position: 100% 0;
   }
 }
+
 .rightHeader {
   float:right;
 }
+
+.codeLocation{
+  width: 700px;
+  background-color: aliceblue;
+  color: black;
+}
+
 .running {
   background-image: url('./stripe_run.png');
   background-position: 0px 0px;

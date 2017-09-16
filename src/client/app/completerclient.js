@@ -29,7 +29,7 @@ class CompleterWsClient {
         };
 
         ws.onclose = (event) => {
-            console.log("WS disconnected");n
+            console.log("WS disconnected");
             setTimeout(this.tryWsConnect,1000);
         };
 

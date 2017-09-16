@@ -92,8 +92,13 @@ class NodeDetail extends React.Component {
                     fullLogs.push((<div key={node.stage_id + '-header'} className={styleExtra.join(' ')}>
                         {node.stage_id} {title} {node.state === 'failed' ? "(Failed)" : ""}
                         <div className={styles.rightHeader}>{node.started ? this.formatTime(node.started) : "pending"}</div>
-                    </div>))
+                    </div>));
 
+                    if(node.code_location){
+                        fullLogs.push((<div key={node.stage_id + '-codeloc'} className={styles.codeLocation}>
+                            {node.code_location}
+                        </div>))
+                    }
 
                     if (logs) {
                         fullLogs.push(<div key={node.stage_id + '-log'} className={styles.logEntry}>{logs}</div>);
