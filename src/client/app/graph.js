@@ -66,6 +66,7 @@ class Graph {
                         stage_id: stage_id,
                         created: Date.parse(evtData.ts),
                         op: evtData.op,
+                        code_location:evtData.code_location,
                         dependencies: evtData.dependencies
                     });
             }
