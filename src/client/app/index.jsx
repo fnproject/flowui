@@ -5,6 +5,9 @@ import Controller from './controller.js';
 import GraphTimeline from './GraphTimeline.jsx';
 import FnClient from './fnclient.js';
 import styles from './index.css'
+import {HashRouter as Router, Route, Switch} from 'react-router-dom';
+import MockCompleterClient from './mockcompleterclient.js';
+import CompleterWsClient from './completerclient.js';
 
 require('file-loader?name=[name].[ext]!./index.html');
 
@@ -21,7 +24,15 @@ class App extends React.Component {
 
 
         this.state.currentGraph = null;
-        this.state.controller = new Controller((c) => {
+
+        let client;
+        if(props.match.path==='/mock'){
+            client = new MockCompleterClient();
+        }else{
+            client = new CompleterWsClient();
+        }
+
+        this.state.controller = new Controller(client,(c) => {
             this.state.controller = c;
             if (!this.state.currentGraph && c.getKnownGraphs().length > 0 && this.state.loadOnNew) {
                 this.onGraphSelected(c.getKnownGraphs().slice(-1)[0].data.graph_id);
@@ -134,15 +145,19 @@ class App extends React.Component {
 
     // Please note this currently only works for the first graph you create
     render() {
-        var graphListItems = [];
+        let graphListItems = [];
         this.state.controller.getKnownGraphs().forEach((graph) => {
             let elem = (<div key={graph.data.graph_id}
                              style={{
                                  padding: '10px', textAlign: 'center',
                                  borderBottom: '3px double #CCCCCC'
                              }}>
-                <a href="#"
-                   onClick={() => this.onGraphSelected(graph.data.graph_id)}>{graph.data.function_id} {graph.data.graph_id}</a>
+                <a href={"#"+this.props.location.pathname}
+                   onClick={(e) => {
+                       this.onGraphSelected(graph.data.graph_id);
+                       e.stopPropagation();
+                       e.nativeEvent.stopImmediatePropagation();
+                   }}>{graph.data.function_id} {graph.data.graph_id}</a>
 
             </div>);
             graphListItems.push(elem);
@@ -167,4 +182,11 @@ class App extends React.Component {
 
 }
 
-render(<App/>, document.getElementById('app'));
+render((<Router>
+    <div>
+        <Switch>
+            <Route exact path="/" component={App}/>
+            <Route path="/mock" component={App}/>
+        </Switch>
+    </div>
+</Router>), document.getElementById('app'));

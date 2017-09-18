@@ -1,8 +1,8 @@
 class CompleterWsClient {
 
 
-    constructor(receiver) {
-        this.receiver = receiver;
+    constructor() {
+        this.receiver = ()=>{};
         this.tryWsConnect = this.tryWsConnect.bind(this);
         this.tryWsConnect();
 

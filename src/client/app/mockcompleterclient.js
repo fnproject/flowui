@@ -3,12 +3,12 @@ import {mockActiveGraphEvents, mockSubscriptionData} from "./sample_events.js"
 
 class MockCompleterClient {
 
-    constructor(receiver) {
-        this.receiver = receiver;
+    constructor() {
+        this.receiver = ()=>{};
         this.subscriptions = new Set();
         setTimeout(() => {
             // console.log("sending lifecycle events",mockActiveGraphEvents);
-            mockActiveGraphEvents.forEach(receiver)
+            mockActiveGraphEvents.forEach(this.receiver)
         }, 100);
     }
 

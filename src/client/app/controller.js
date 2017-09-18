@@ -1,21 +1,18 @@
 import Graph from './graph.js';
+
 //import CompleterWsClient from "./completerclient";
-import MockCompleterClient from "./mockcompleterclient";
-import CompleterWsClient from "./completerclient";
 
 
 class Controller {
 
-    constructor(onChanged) {
+    constructor(client, onChanged) {
         this.known_graphs = new Set();
         this.active_graphs = new Map();
 
-        this.client = new MockCompleterClient((e) => {
+        this.client = client;
+        client.receiver = (e) => {
             this.receiveEvent(e);
-        });
-        // this.client = new CompleterWsClient((e) => {
-        //     this.receiveEvent(e);
-        // });
+        };
         this.on_changed = onChanged;
         this.debounce_timeout = null;
 
@@ -36,7 +33,7 @@ class Controller {
                 }
                 break;
             default: {
-              let graph;
+                let graph;
                 let graph_id = event.sub;
                 if (event.type === 'model.GraphCreatedEvent') {
                     graph = new Graph(event);
