@@ -493,7 +493,7 @@ class GraphTimeline extends React.Component {
                 <div className={styles.overview}
                      style={{width: this.state.width + 'px', height: this.state.height + 'px'}}>
                     <div className={styles.viewport}
-                         style={{width: this.state.viewPortWidth + 'px', height: this.state.viewPortHeight + 'px'}}>
+                         style={{width: this.state.viewPortWidth -3+ 'px', height: this.state.viewPortHeight + 'px'}}>
 
                         <div className={styles.scrollingArea} style={{
                             left: -relativeX(this.state.cursorTs) + 'px',
