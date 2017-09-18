@@ -7,7 +7,7 @@
     border-right: 3px solid black;
     padding-top:-1px;
     border-top:1px solid lightgray;
-
+    overflow:hidden;
 }
 
 .graphblock {

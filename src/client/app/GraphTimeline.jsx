@@ -31,10 +31,6 @@ class GraphTimeline extends React.Component {
             verticalScrollRatio: 0,
 
             scrollBarHeight: 300,
-            // node
-            pendingNodes: [],
-            // node
-            activeNodes: [],
             // stage_id
             selectedDeps: new Map(),
             graphNode: props.graph.getNodes().shift(),
@@ -46,6 +42,8 @@ class GraphTimeline extends React.Component {
         this.onDragStart = this.onDragStart.bind(this);
         this.updateDimensions = this.updateDimensions.bind(this);
         this.isNodeShownByDefault = this.isNodeShownByDefault.bind(this);
+        this.updateScroll = this.updateScroll.bind(this);
+
     }
 
 
@@ -115,110 +113,9 @@ class GraphTimeline extends React.Component {
             update.maxTimeStamp = graph.finished ;
         }
 
+        update.timeline = graph.createTimeline(this.isNodeShownByDefault);
 
-        let pendingNodes = [];
-        let activeNodes = [];
-        graph.getNodes()
-            .forEach((node) => {
-                if (node.state === 'pending') {
-                    pendingNodes.push(node);
-                } else {
-                    activeNodes.push(node);
-                }
-            });
-
-        activeNodes.sort((a, b) => {
-            return a.created - b.created
-        });
-
-
-        // TODO move to node class
-        // TODO make node class
-        function nodesConflict(a, b) {
-            if ((a.state === 'running' && b.state === 'running')) {
-                return true;
-            }
-            if (a.state === 'running') {
-                if (b.state === 'running') {
-                    return true;
-                } else {
-                    return b.completed > a.started;
-                }
-            } else {
-                if (b.state === 'running') {
-                    return a.completed > b.started;
-                }   // both completed
-                return ((a.started > b.started) && (a.started < b.completed)) ||
-                    ((a.completed > b.started) && (a.completed < b.completed));
-            }
-        }
-
-
-        // rank_id -> Map[stage_id] - stage
-        var ranks = [];
-
-        function findRank(stage_id) {
-            for (let rank in ranks) {
-                if (ranks[rank].has(stage_id)) {
-                    return rank;
-                }
-            }
-            throw "No rank found for stage " + stage_id;
-        }
-
-        activeNodes
-            .forEach(
-                (node) => {
-                    // hidden nodes
-                    var shown = this.isNodeShownByDefault(node);
-
-                    let minRank = -1;
-                    // Never place dependent nodes above their parents
-                    node.dependencies.forEach((stage_id) => {
-                        minRank = Math.max(minRank, findRank(stage_id))
-                    });
-
-                    //console.log("min rank for " + node.stage_id + " " +minRank);
-                    // no precendence here - put this on a new rank
-                    if (minRank === -1) {
-                        if(!shown && ranks.length > 0){
-                            ranks[ranks.length-1].set(node.stage_id, node);
-                        }else{
-                            let rankMap = new Map();
-                            rankMap.set(node.stage_id, node);
-                            ranks.push(rankMap);
-                        }
-                    } else {
-                        // if this is an invisible node, just dump it at its parent rank
-                        if (!(node.op === 'completedValue' || node.op === 'externalFuture')) {
-                            for (let [id, other] of ranks[minRank]) {
-                                if (shown &&  this.isNodeShownByDefault(other) && nodesConflict(node, other)) {
-                                    // not free push this node to a new rank below min rank
-                                    let rankMap = new Map();
-                                    rankMap.set(node.stage_id, node);
-                                    ranks.splice(minRank + 1, 0, rankMap);
-                                    return;
-                                }
-                            }
-                        }
-                        // parent rank is free here
-                        ranks[minRank].set(node.stage_id, node);
-                    }
-                });
-
-        // stage-id -> rank
-        let rankMap = new Map();
-        ranks.forEach((v, rank) => {
-            v.forEach((node) => {
-                rankMap.set(node.stage_id, rank);
-            })
-        });
-
-        update.rankMap = rankMap;
-        update.pendingNodes = pendingNodes;
-        update.activeNodes = activeNodes;
-
-        let graphHeight = Math.max(this.state.viewPortHeight, this.state.nodeHeight * (ranks.length));
+        let graphHeight = Math.max(this.state.viewPortHeight, this.state.nodeHeight * (update.timeline.maxRanks()));
         update.graphHeight = graphHeight;
         let maxScroll = Math.max(0, graphHeight - this.state.viewPortHeight);
         update.maxScroll = maxScroll;
@@ -238,6 +135,8 @@ class GraphTimeline extends React.Component {
         this.setState(update);
     }
 
+
+
     componentDidMount() {
         this.updateDimensions();
         this.startWatch();
@@ -252,17 +151,20 @@ class GraphTimeline extends React.Component {
         this.setState({autoScroll: false, verticalScrollRatio: s});
     }
 
-    startWatch() {
-        function updateScroll() {
-            this.updateGraphDetails(this.state.graph);
+    updateScroll() {
+        this.updateGraphDetails(this.state.graph);
 
-            if (this.state.graph.isLive()) {
-                setTimeout(updateScroll, 50);
-            }
+        if (this.state.graph.isLive()) {
+            setTimeout(this.updateScroll, 50);
+        }else{
+            this.scrolling =false;
         }
-
-        updateScroll = updateScroll.bind(this);
-        setTimeout(updateScroll, 50);
+    }
+    startWatch() {
+        if(!this.scrolling){
+            setTimeout(this.updateScroll, 50);
+            this.scrolling = true;
+        }
     }
 
 
@@ -337,6 +239,10 @@ class GraphTimeline extends React.Component {
         let startTs = this.state.graph.created;
         let self = this;
 
+        if(!this.state.timeline ){
+            return null;
+        }
+
         // converts a timestamp to a relative X in the display viewport
         let relativeX = function (timeStamp) {
             return (timeStamp - startTs) * self.state.pxPerMs;
@@ -353,16 +259,16 @@ class GraphTimeline extends React.Component {
 
         let nodeElements = [];
 
-        this.state.activeNodes.forEach((node, idx) => {
+        this.state.timeline.activeNodes.forEach((node, idx) => {
 
 
             let createTs = relativeX(node.created);
 
-            if (!this.state.rankMap.has(node.stage_id)) {
+            if (!this.state.timeline.rankMap.has(node.stage_id)) {
                 // non-displayed stage.
                 return;
             }
-            let rank = this.state.rankMap.get(node.stage_id);
+            let rank = this.state.timeline.rankMap.get(node.stage_id);
 
 
             let styleExtra = [];
@@ -371,7 +277,7 @@ class GraphTimeline extends React.Component {
             } else if (node.op === 'main') {
                 styleExtra.push(styles.lifecycle);
             }
-            var displayNode = this.isNodeShownByDefault(node);
+            let displayNode = this.isNodeShownByDefault(node);
             if (this.state.selectedNode) {
                 if (this.state.selectedDeps.has(node.stage_id)) {
                     displayNode=true;
@@ -452,7 +358,7 @@ class GraphTimeline extends React.Component {
         });
 
 
-        this.state.pendingNodes.forEach((node, idx) => {
+        this.state.timeline.pendingNodes.forEach((node, idx) => {
 
 
             let styleExtra = [styles.pending];
@@ -464,7 +370,7 @@ class GraphTimeline extends React.Component {
             if (this.state.selectedNode === node) {
                 styleExtra.push(styles.selected);
             }
-            let index = this.state.pendingNodes.indexOf(node);
+            let index = this.state.timeline.pendingNodes.indexOf(node);
             let pendingboxStyle = {
                 left: '3px',
                 position: 'absolute',
