@@ -10,7 +10,8 @@ class NodeDetail extends React.Component {
 
         this.state = {
             node: props.node,
-            nodeLogs: props.nodeLogs
+            nodeLogs: props.nodeLogs || new Map(),
+            nodeCalls: props.nodeCalls|| new Map(),
         };
 
     }
@@ -43,7 +44,12 @@ class NodeDetail extends React.Component {
         let duration;
         let stageId;
         let op;
-        let started = "";
+        let triggered = "";
+        let call_queued = "";
+
+        let call_started = "";
+        let call_ended = "";
+
         let finished = "";
 
         function nodeTitle(node) {
@@ -90,7 +96,7 @@ class NodeDetail extends React.Component {
 
 
                     fullLogs.push((<div key={node.stage_id + '-header'} className={styleExtra.join(' ')}>
-                        {node.stage_id} {title} {node.state === 'failed' ? "(Failed)" : ""}
+                        {node.stage_id} {title} {node.state === 'failed' ? "(Failed)" : ""} {node.call_id?node.call_id:""}
                         <div className={styles.rightHeader}>{node.started ? this.formatTime(node.started) : "pending"}</div>
                     </div>));
 
@@ -107,17 +113,29 @@ class NodeDetail extends React.Component {
             );
 
             stageId = this.state.node.stage_id;
-            op = this.state.node.op;
 
             if (this.state.node.started == null) {
-                started = "Started: ...";
+                triggered = "Triggered: Not triggered";
+            }else {
+                triggered = "Triggered: " + this.formatTime(this.state.node.started);
             }
 
-            else {
-                started = "Started: " + this.formatTime(this.state.node.started);
+            let callInfo = this.state.nodeCalls.get( this.state.node);
+
+            if(callInfo){
+                if(callInfo.created_at){
+                    call_queued = (<div>Queued: {this.formatTime(Date.parse(callInfo.created_at))}</div>)
+                }
+                if(callInfo.started_at){
+                    call_started = (<div>Call Started: {this.formatTime(Date.parse(callInfo.started_at))}</div>)
+                }
+                if(callInfo.completed_at){
+                    call_ended = (<div>Call Completed: {this.formatTime(Date.parse(callInfo.completed_at))}</div>)
+                }
             }
+
             if (this.state.node.completed == null) {
-                finished = "Finished: ...";
+                finished = "Finished: Not completed";
             } else {
                 finished = "Finished: " + this.formatTime(this.state.node.completed);
             }
@@ -142,13 +160,16 @@ class NodeDetail extends React.Component {
                 <div style={{
                     display: 'inline-block', minHeight: '200px', maxHeight: '300px',
                     overflow:'scroll',
-                    minWidth: '700px'
+                    minWidth: '810px'
                 }}>
                     {fullLogs}
                 </div>
                 <div className={styles.nodeInfo} style={{display: 'block'}}>
                     Created: {this.formatTime(this.state.node.created)}<br/>
-                    {started}<br/>
+                    {triggered}<br/>
+                    {call_queued}
+                    {call_started}
+                    {call_ended}
                     {finished}<br/>
                     Duration: {duration}<br/>
                 </div>

@@ -26,13 +26,13 @@ class App extends React.Component {
         this.state.currentGraph = null;
 
         let client;
-        if(props.match.path==='/mock'){
+        if (props.match.path === '/mock') {
             client = new MockCompleterClient();
-        }else{
+        } else {
             client = new CompleterWsClient();
         }
 
-        this.state.controller = new Controller(client,(c) => {
+        this.state.controller = new Controller(client, (c) => {
             this.state.controller = c;
             if (!this.state.currentGraph && c.getKnownGraphs().length > 0 && this.state.loadOnNew) {
                 this.onGraphSelected(c.getKnownGraphs().slice(-1)[0].data.graph_id);
@@ -88,7 +88,7 @@ class App extends React.Component {
         }
         return (
             <div>
-                <GraphTimeline graph={graph} height='500' onNodeSelected={this.onNodeSelected}/>
+                <GraphTimeline graph={graph} height='800' onNodeSelected={this.onNodeSelected}/>
             </div>
         );
     }
@@ -103,7 +103,7 @@ class App extends React.Component {
 
         return (
             <div>
-                <NodeDetail node={this.state.currentNode} nodeLogs={this.state.nodeLogs}/>
+                <NodeDetail node={this.state.currentNode} nodeLogs={this.state.nodeLogs} nodeCalls={this.state.nodeCalls}/>
             </div>
         );
     }
@@ -121,6 +121,8 @@ class App extends React.Component {
             console.log(`node ${graph.graph_id}: ${node.stage_id} selected`);
 
             this.state.nodeLogs = new Map();
+            this.state.nodeCalls = new Map();
+
             for (let item of deps) {
                 let nodeDep = graph.getNode(item);
                 this.state.nodeLogs.set(nodeDep, null);
@@ -134,10 +136,20 @@ class App extends React.Component {
                                 this.state.nodeLogs.set(nodeDep, logs);
                                 this.setState({nodeLogs: this.state.nodeLogs});
                             }
-                        }).catch((e) => {
-                        console.log("error loading logs: " + e.message);
-                        throw e;
-                    })
+                        })
+                        .catch((e) => {
+                            console.log("error loading logs: " + e.message);
+                            throw e;
+                        });
+                    this.state.fnclient.loadCall(appId, nodeDep.call_id)
+                        .then((callInfo) => {
+                            this.state.nodeCalls.set(nodeDep, callInfo);
+                            this.setState({nodeCalls: this.state.nodeCalls});
+                        })
+                        .catch((e) => {
+                            console.log("error loading call: " + e.message);
+                            throw e;
+                        });
                 }
             }
         }
@@ -152,7 +164,7 @@ class App extends React.Component {
                                  padding: '10px', textAlign: 'center',
                                  borderBottom: '3px double #CCCCCC'
                              }}>
-                <a href={"#"+this.props.location.pathname}
+                <a href={"#" + this.props.location.pathname}
                    onClick={(e) => {
                        this.onGraphSelected(graph.data.graph_id);
                        e.stopPropagation();

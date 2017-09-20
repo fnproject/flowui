@@ -23,7 +23,7 @@ class GraphTimeline extends React.Component {
             viewPortHeight: props.height - 100,
 
             height: props.height,
-            pxPerMs: 0.06,
+            pxPerMs: 0.04,
             graphHeight: 0,
             dragging: false,
             dragStartY: 0,

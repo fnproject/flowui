@@ -5,6 +5,7 @@ class FnClient {
     constructor(baseUrl) {
         this.baseUrl = baseUrl;
         this.loadLogs = this.loadLogs.bind(this);
+        this.loadCall = this.loadCall.bind(this);
     }
 
     /**
@@ -14,10 +15,8 @@ class FnClient {
      * @return a promise for log data as a string
      */
     loadLogs(app_id, call_id) {
-      let logs;
         return fetch(`${this.baseUrl}/v1/apps/${app_id}/calls/${call_id}/log`)
-            .then(
-                function (response) {
+            .then((response) =>{
                     if (!response.ok) {
                         console.log('Looks like there was a problem. Status Code: ' +
                             response.status);
@@ -29,10 +28,32 @@ class FnClient {
                             if (data.error) {
                                 throw data.error.message;
                             } else {
-                              logs = data.log.log;
                                 return data.log.log;
                             }
                         });
+                }
+            )
+    }
+
+    loadCall(app_id, call_id){
+        return fetch(`${this.baseUrl}/v1/apps/${app_id}/calls/${call_id}`)
+            .then(
+                (response)=>{
+                    if (!response.ok) {
+                        console.log('Looks like there was a problem. Status Code: ' +
+                            response.status);
+                        throw `Error fetching logs for ${call_id}`;
+                    }
+
+                    return response.json()
+                        .then((data)=>{
+                            if(data.error){
+                                throw data.error.message;
+                            }else{
+                                return data.call;
+                            }
+                        });
+
                 }
             )
     }
