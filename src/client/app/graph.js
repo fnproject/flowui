@@ -115,11 +115,11 @@ class Graph {
                     code_location:evtData.code_location,
                     dependencies: evtData.dependencies
                 });
-                if(evtData["parent_id"]){
+                if(evtData["caller_id"]){
                     if(!stage.dependencies){
                         stage.dependencies = [];
                     }
-                    stage.dependencies.push(evtData.parent_id);
+                    stage.dependencies.push(evtData.caller_id);
                 }
 
                 this.stage_map.set(stage_id,

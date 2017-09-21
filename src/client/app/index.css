@@ -1,17 +1,17 @@
 
 .content {
     position:relative;
-    left:400px;
-    width: calc(100% - 400px);
+    left:200px;
+    width: calc(100% - 200px);
+
 }
 
 .graphlist {
-
     position:absolute;
-    min-height:1000px;
+    min-height:100%;
     top:0px;
     left:0px;
     background-color:lightgray;
-    width:400px;
+    width:200px;
     padding:10px;
 }

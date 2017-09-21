@@ -9,15 +9,15 @@
 .overview {
     position: relative;
     overflow: hidden;
-    border-top: 3px solid black;
-    border-left: 3px solid black;
+    border-top: 3px solid darkgray;
+    border-left: 3px solid darkgray;
 }
 
 .pendingView {
     background-image: url('./pending_area.png');
-    border-left: 3px solid black;
-    border-bottom: 3px solid black;
-    border-right: 3px solid black;
+    border-left: 3px solid darkgray;
+    border-bottom: 3px solid darkgray;
+    border-right: 3px solid darkgray;
     overflow: hidden;
 
 }
@@ -25,7 +25,7 @@
 .verticalScroll {
     background-color: lightgrey;
     opacity: 0.2;
-    border-left: 1px solid black;
+    border-left: 1px solid darkgray;
     z-index: 4;
     width: 25px;
 }
@@ -50,6 +50,14 @@
     background-color: lightgrey;
 }
 
+.pendingTitle{
+    margin-left: 2px;
+    position: absolute;
+    height: 22px;
+    font-size: 13pt;
+    top: 0px;
+    color: gray;
+}
 .node {
     border-radius: 3px;
     border: 1px solid grey;
@@ -136,9 +144,15 @@
 }
 
 .node.invokeFunction {
-    border: 2px solid darkblue;
     background: lightblue;
 }
+
+
+.node.invokeFunction.running {
+    background-image: url('./stripe_run_fn.png');
+    background-position: 0px 0px;
+    background-repeat: repeat;
+    animation: animatedBackground 10s linear infinite;}
 
 [data-tooltip] {
     position: relative;

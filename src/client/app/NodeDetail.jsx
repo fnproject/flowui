@@ -11,7 +11,7 @@ class NodeDetail extends React.Component {
         this.state = {
             node: props.node,
             nodeLogs: props.nodeLogs || new Map(),
-            nodeCalls: props.nodeCalls|| new Map(),
+            nodeCalls: props.nodeCalls || new Map(),
         };
 
     }
@@ -43,7 +43,6 @@ class NodeDetail extends React.Component {
         let fullLogs = [];
         let duration;
         let stageId;
-        let op;
         let triggered = "";
         let call_queued = "";
 
@@ -73,8 +72,9 @@ class NodeDetail extends React.Component {
                     return a.stage_id.localeCompare(b.stage_id);
                 }
             });
+            sortNodes = sortNodes.reverse();
 
-            sortNodes.forEach((node) => {
+            sortNodes.forEach((node, idx) => {
                     let logs = this.state.nodeLogs.get(node);
                     let styleExtra = [styles.logHeader];
                     switch (node.state) {
@@ -92,15 +92,20 @@ class NodeDetail extends React.Component {
                             break;
                     }
 
-                    var title = nodeTitle(node);
-
+                    let title = nodeTitle(node);
+                    let causedBy= null;
+                    if (idx !== 0) {
+                        causedBy = (<div className={styles.causedBy}>
+                        Caused by</div>)
+                    }
 
                     fullLogs.push((<div key={node.stage_id + '-header'} className={styleExtra.join(' ')}>
-                        {node.stage_id} {title} {node.state === 'failed' ? "(Failed)" : ""} {node.call_id?node.call_id:""}
+                        {causedBy}
+                        {node.stage_id} {title} {node.state === 'failed' ? "(Failed)" : ""} {node.call_id ? node.call_id : ""}
                         <div className={styles.rightHeader}>{node.started ? this.formatTime(node.started) : "pending"}</div>
                     </div>));
 
-                    if(node.code_location){
+                    if (node.code_location) {
                         fullLogs.push((<div key={node.stage_id + '-codeloc'} className={styles.codeLocation}>
                             {node.code_location}
                         </div>))
@@ -116,20 +121,20 @@ class NodeDetail extends React.Component {
 
             if (this.state.node.started == null) {
                 triggered = "Triggered: Not triggered";
-            }else {
+            } else {
                 triggered = "Triggered: " + this.formatTime(this.state.node.started);
             }
 
-            let callInfo = this.state.nodeCalls.get( this.state.node);
+            let callInfo = this.state.nodeCalls.get(this.state.node);
 
-            if(callInfo){
-                if(callInfo.created_at){
+            if (callInfo) {
+                if (callInfo.created_at) {
                     call_queued = (<div>Queued: {this.formatTime(Date.parse(callInfo.created_at))}</div>)
                 }
-                if(callInfo.started_at){
+                if (callInfo.started_at) {
                     call_started = (<div>Call Started: {this.formatTime(Date.parse(callInfo.started_at))}</div>)
                 }
-                if(callInfo.completed_at){
+                if (callInfo.completed_at) {
                     call_ended = (<div>Call Completed: {this.formatTime(Date.parse(callInfo.completed_at))}</div>)
                 }
             }
@@ -156,10 +161,10 @@ class NodeDetail extends React.Component {
 
         return (<div className={styles.nodeInfoBox}>
             <h3>{stageId} : {nodeTitle(this.state.node)}</h3>
-            <div style={{display:'flex'}}>
+            <div style={{display: 'flex'}}>
                 <div style={{
-                    display: 'inline-block', minHeight: '200px', maxHeight: '300px',
-                    overflow:'scroll',
+                    display: 'inline-block', minHeight: '200px',
+                    overflow: 'scroll',
                     minWidth: '810px'
                 }}>
                     {fullLogs}

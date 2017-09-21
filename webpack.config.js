@@ -54,6 +54,8 @@ var config = {
             // {output}/file.txt
             {from: 'src/client/app/background.png'},
             {from: 'src/client/app/app.css'},
+            {from: 'src/client/app/bootstrap.min.css'},
+            {from: 'src/client/app/bootstrap-theme.min.css'},
         ])]
 };
 

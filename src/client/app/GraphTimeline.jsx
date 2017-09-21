@@ -16,14 +16,14 @@ class GraphTimeline extends React.Component {
             intervalTimer: -1,
             autoScroll: props.graph.isLive(),
             width: 1200,
-            pendingWidth: 150,
+            pendingWidth: 160,
 
             zoomLineHeight: 100,
             viewPortWidth: props.width - 150,
             viewPortHeight: props.height - 100,
 
             height: props.height,
-            pxPerMs: 0.04,
+            pxPerMs: 0.05,
             graphHeight: 0,
             dragging: false,
             dragStartY: 0,
@@ -34,7 +34,7 @@ class GraphTimeline extends React.Component {
             // stage_id
             selectedDeps: new Map(),
             graphNode: props.graph.getNodes().shift(),
-            nodeHeight: 28,
+            nodeHeight: 30,
         };
         this.selectNode = this.selectNode.bind(this);
         this.manualScrollX = this.manualScrollX.bind(this);
@@ -248,13 +248,8 @@ class GraphTimeline extends React.Component {
             return (timeStamp - startTs) * self.state.pxPerMs;
         };
 
-        let pendingElems = [(<div key='0'
-                                  style={{
-                                      position: 'absolute',
-                                      height: '20px',
-                                      top: '0px',
-                                      color: 'grey'
-                                  }}
+        let pendingElems = [(<div key='pending-title'
+                                  className={styles.pendingTitle}
         > Pending Events: </div>)];
 
         let nodeElements = [];
@@ -427,7 +422,7 @@ class GraphTimeline extends React.Component {
                         </div>
                         <div className={styles.pendingView} style={{
                             width: this.state.pendingWidth -3 + 'px', position: 'absolute',
-                            height: this.state.viewPortHeight + 'px', left: this.state.viewPortWidth -3 + 'px', top: '0px'
+                            height: this.state.viewPortHeight + 'px', left: this.state.viewPortWidth  + 'px', top: '0px'
                         }}>
 
                             <div>{pendingElems}</div>
@@ -441,7 +436,7 @@ class GraphTimeline extends React.Component {
                               maxTs={this.state.maxTimeStamp + 1000}
                               live={this.state.live}
                               height={this.state.zoomLineHeight -4}
-                              onScrollChanged={this.manualScrollX} width={this.state.viewPortWidth-3}/>
+                              onScrollChanged={this.manualScrollX} width={this.state.viewPortWidth + 3}/>
 
                 </div>
             </div>
