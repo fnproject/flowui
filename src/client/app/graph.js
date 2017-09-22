@@ -5,12 +5,18 @@
  */
 
 class Node {
-    constructor(props){
-        Object.assign(this,props);
+    constructor(props) {
+        Object.assign(this, props);
+        this.isPending = this.isPending.bind(this);
+        this.conflictsWith = this.conflictsWith.bind(this);
+        this.deps = this.deps.bind(this);
     }
 
+    id() {
+        return this.stage_id
+    }
 
-    conflictsWith( b) {
+    conflictsWith(b) {
         if ((this.state === 'running' && b.state === 'running')) {
             return true;
         }
@@ -28,12 +34,52 @@ class Node {
                 ((this.completed > b.started) && (this.completed < b.completed));
         }
     }
+
+    dependsOn(otherNode) {
+        return this.dependencies.some((n) => {
+            return n === otherNode
+        });
+    }
+
+    isPending() {
+        return this.state === 'pending';
+    }
+
+    callDeps(){
+        return Array.from(this.deps()).push(this.caller);
+    }
+
+    deps() {
+        let deps = Array.from(this.dependencies);
+        if(this.caller!=null && deps.length ===0){
+            deps.push(this.caller);
+        }
+        return deps;
+    }
+
+    // Returns a Set of Nodes
+    transitiveDeps(includeCaller) {
+        let depsOfNode = this.deps();
+        if (depsOfNode.length === 0) {
+            return new Set();
+        }
+        let transitiveDependenciesOfNode = new Set(depsOfNode);
+        depsOfNode.forEach((dep) => {
+            dep.transitiveDeps(includeCaller).forEach((transitiveDep) => transitiveDependenciesOfNode.add(transitiveDep));
+        });
+
+        if(includeCaller && this.caller){
+            this.caller.transitiveDeps(true).forEach((d)=>transitiveDependenciesOfNode.add(d));
+        }
+        return transitiveDependenciesOfNode;
+    };
+
 }
 
 
-class GraphTimeline{
+class GraphTimeline {
 
-    constructor(activeNodes,pendingNodes,rankMap){
+    constructor(activeNodes, pendingNodes, rankMap) {
         this.activeNodes = activeNodes;
         this.pendingNodes = pendingNodes;
         this.rankMap = rankMap;
@@ -41,15 +87,16 @@ class GraphTimeline{
     }
 
     maxRanks() {
-        if(!this.maxR){
-            return this.maxR =  Array.from(this.rankMap.values()).reduce((a,b)=>Math.max(a,b),0);
-        }else{
+        if (!this.maxR) {
+            return this.maxR = Array.from(this.rankMap.values()).reduce((a, b) => Math.max(a, b), 0);
+        } else {
             return this.maxR;
         }
 
     }
 
 }
+
 class Graph {
     constructor(createdEvent) {
 
@@ -61,6 +108,8 @@ class Graph {
         this.stage_map = new Map();
         this.function_id = createdEvent.data.function_id;
         this.event_map = [];
+        this.getNode = this.getNode.bind(this);
+        this.getNodes = this.getNodes.bind(this);
     }
 
     getId() {
@@ -100,6 +149,7 @@ class Graph {
                     started: start,
                     dependencies: [],
                     function_id: evt.data.function_id,
+                    caller: null,
                     op: 'main',
                 }));
             }
@@ -112,18 +162,18 @@ class Graph {
                     stage_id: stage_id,
                     created: Date.parse(evtData.ts),
                     op: evtData.op,
-                    code_location:evtData.code_location,
-                    dependencies: evtData.dependencies
+                    code_location: evtData.code_location,
+                    caller: this.getNode(evtData.caller_id || "main"),
+                    dependencies: ((evtData.dependencies || []).map(this.getNode)).map((dep) => {
+                        if (dep.composed_node ) {
+                            return dep.composed_node;
+                        } else {
+                            return dep;
+                        }
+                    })
                 });
-                if(evtData["caller_id"]){
-                    if(!stage.dependencies){
-                        stage.dependencies = [];
-                    }
-                    stage.dependencies.push(evtData.caller_id);
-                }
 
-                this.stage_map.set(stage_id,
-                    stage);
+                this.stage_map.set(stage_id, stage);
             }
                 break;
             case 'model.DelayScheduledEvent': {
@@ -183,9 +233,19 @@ class Graph {
             }
                 break;
             case 'model.StageComposedEvent': {
-                updateStage(evt.data.composed_stage_id, (stage) => {
-                    stage.dependencies.push(evt.data.stage_id);
-                    return stage;
+                let thenComposedNode = this.getNode(evt.data.stage_id);
+                let newNode = this.getNode(evt.data.composed_stage_id);
+                thenComposedNode.composed_node = newNode;
+                console.log(`using ${newNode.id()} (${newNode.op}) in place of ${thenComposedNode.id()} ${thenComposedNode.op}`);
+
+                this.getNodes().forEach((node) => {
+                    node.dependencies = node.dependencies.map((dep) => {
+                        if (dep.composed_node) {
+                            return dep.composed_node;
+                        } else {
+                            return dep;
+                        }
+                    });
                 });
             }
                 break;
@@ -198,6 +258,7 @@ class Graph {
         }
     }
 
+
     On(evt_name, fn) {
         (this.event_map[evt_name] = this.event_map[evt_name] || []).push(fn);
     }
@@ -206,18 +267,6 @@ class Graph {
         return this.stage_map.get(id);
     }
 
-    findDepIds(nodeId) {
-        let depsOfNode = this.getNode(nodeId).dependencies;
-        if (depsOfNode.length === 0) {
-            return new Set();
-        }
-        let transitiveDependenciesOfNode = new Set(depsOfNode);
-        depsOfNode.forEach((dep) => {
-            this.findDepIds(dep).forEach((transitiveDep) => transitiveDependenciesOfNode.add(transitiveDep));
-        });
-
-        return transitiveDependenciesOfNode;
-    };
 
     getNodes() {
         return Array.from(this.stage_map.values());
@@ -229,29 +278,48 @@ class Graph {
      * @param visibilityFn (node)->bool
      * @return {GraphTimeline}
      */
-    createTimeline(visibilityFn){
-
+    createTimeline(visibilityFn) {
         let pendingNodes = [];
         let activeNodes = [];
+        let rootNodes = [];
+        // stageId -> node
+        let children = new Map();
+
         this.getNodes()
             .forEach((node) => {
-                if (node.state === 'pending') {
-                    pendingNodes.push(node);
-                } else {
+                if (!node.isPending()) {
                     activeNodes.push(node);
+                    if (node.deps().length === 0) {
+                        rootNodes.push(node);
+                    } else {
+                        node.deps()
+                            .forEach((dep) => {
+                                let child_list = children.get(dep.id());
+                                if (!child_list) {
+                                    child_list = [];
+                                }
+                                child_list.push(node);
+                                children.set(dep.id(), child_list);
+                            });
+                    }
+                } else {
+                    pendingNodes.push(node);
                 }
             });
 
-        activeNodes.sort((a, b) => {
-            return a.created - b.created
+        // Returns the children (inverted deps on a node)
+        function getChildren(node) {
+            return children.get(node.id()) || [];
+        }
+
+
+        rootNodes.sort((a, b) => {
+            return a.started - b.started
         });
 
-
-
-
-
-        // rank_id -> Map[stage_id] - stage
-        var ranks = [];
+        // stage_id*
+        let visited = new Set();
+        let ranks = [];
 
         function findRank(stage_id) {
             for (let rank in ranks) {
@@ -259,59 +327,105 @@ class Graph {
                     return rank;
                 }
             }
-            throw "No rank found for stage " + stage_id;
+            return -1;
         }
 
-        activeNodes
-            .forEach(
-                (node) => {
-                    // hidden nodes
-                    const shown = visibilityFn(node);
-
-                    let minRank = -1;
-                    // Never place dependent nodes above their parents
-                    node.dependencies.forEach((stage_id) => {
-                        minRank = Math.max(minRank, findRank(stage_id))
-                    });
-
-                    //console.log("min rank for " + node.stage_id + " " +minRank);
-                    // no precendence here - put this on a new rank
-                    if (minRank === -1) {
-                        if(!shown && ranks.length > 0){
-                            ranks[ranks.length-1].set(node.stage_id, node);
-                        }else{
-                            let rankMap = new Map();
-                            rankMap.set(node.stage_id, node);
-                            ranks.push(rankMap);
-                        }
-                    } else {
-                        // if this is an invisible node, just dump it at its parent rank
-                        if (!(node.op === 'completedValue' || node.op === 'externalFuture')) {
-                            for (let [id, other] of ranks[minRank]) {
-                                if (shown &&  visibilityFn(other) && node.conflictsWith(other)) {
-                                    // not free push this node to a new rank below min rank
-                                    let rankMap = new Map();
-                                    rankMap.set(node.stage_id, node);
-                                    ranks.splice(minRank + 1, 0, rankMap);
-                                    return;
-                                }
-                            }
-                        }
-                        // parent rank is free here
-                        ranks[minRank].set(node.stage_id, node);
-                    }
+        function visitNodes(node, visitFn) {
+            if (visited.has(node.id())) {
+                return;
+            }
+            visited.add(node.id());
+            visitFn(node);
+            //
+            let activeChildren = getChildren(node)
+                .filter(node => !node.isPending())
+                .sort((a, b) => {
+                    return a.started - b.started;
                 });
+
+            activeChildren.forEach((childNode) => {
+                // only visit a child if all of its parents have been visited.
+                if (!childNode.dependencies.some((node) => !visited.has(node.id()))) {
+                    visitNodes(childNode, visitFn);
+                }
+            });
+        }
+
+        function allChildren(node) {
+            let children = new Set();
+            children.add(node);
+            getChildren(node)
+                .forEach((child) => {
+                    allChildren(child).forEach((c) => children.add(c));
+                });
+            return children;
+        }
+
+        // rank_id -> Map[stage_id] - stage
+        // visit all children of all root nodes
+        rootNodes.forEach((node) => visitNodes(node, (node => {
+
+            // hidden nodes
+            const shown = visibilityFn(node);
+
+            let minRank = -1;
+            // Never place dependent nodes above their parents
+            let lastChildRank = -1;
+
+            node.deps().forEach((dep) => {
+                let depRank = findRank(dep.stage_id);
+                if (depRank > minRank) {
+                    minRank = depRank;
+                }
+                allChildren(dep).forEach((c) => {
+                    lastChildRank = Math.max(lastChildRank, findRank(c.stage_id));
+                })
+            });
+
+            //console.log("min rank for " + node.stage_id + " " +minRank);
+            // no precendence here - put this on a new rank
+            if (minRank === -1) {
+                if (!shown && ranks.length > 0) {
+                    ranks[ranks.length - 1].set(node.id(), node);
+                } else {
+                    let rankMap = new Map();
+                    rankMap.set(node.id(), node);
+                    ranks.push(rankMap);
+                }
+            } else {
+                let conflict;
+                // if this is an invisible node, just dump it at its parent rank
+                if (!(node.op === 'completedValue' || node.op === 'externalFuture')) {
+                    for (let [id, other] of ranks[minRank]) {
+                        if (shown && visibilityFn(other) && node.conflictsWith(other)) {
+                            // not free push this node to a new rank below min rank
+                            conflict = true;
+                            break;
+                        }
+                    }
+                }
+                if (!conflict) {                // parent rank is free here
+                    ranks[minRank].set(node.id(), node);
+                } else {
+                    let rankMap = new Map();
+                    rankMap.set(node.id(), node);
+                    ranks.splice(lastChildRank + 1, 0, rankMap);
+                }
+
+            }
+
+        })));
 
         // stage-id -> rank
         let rankMap = new Map();
         ranks.forEach((v, rank) => {
             v.forEach((node) => {
-                rankMap.set(node.stage_id, rank);
+                rankMap.set(node.id(), rank);
             })
         });
 
 
-        return new GraphTimeline(activeNodes,pendingNodes,rankMap);
+        return new GraphTimeline(activeNodes, pendingNodes, rankMap);
 
     }
 }

@@ -59,105 +59,97 @@ class NodeDetail extends React.Component {
             }
         }
 
-        if (this.state.node.state !== 'graph') {
-            var sortNodes = Array.from(this.state.nodeLogs.keys());
-            sortNodes = sortNodes.sort((a, b) => {
-                if (a.started && b.started) {
-                    return a.started - b.started;
-                } else if (a.started && !b.started) {
-                    return -1;
-                } else if (!a.started && b.started) {
-                    return 1;
-                } else {
-                    return a.stage_id.localeCompare(b.stage_id);
+        var sortNodes = Array.from(this.state.nodeLogs.keys());
+        sortNodes = sortNodes.sort((a, b) => {
+            if (a.started && b.started) {
+                return a.started - b.started;
+            } else if (a.started && !b.started) {
+                return -1;
+            } else if (!a.started && b.started) {
+                return 1;
+            } else {
+                return a.id().localeCompare(b.id());
+            }
+        });
+        sortNodes = sortNodes.reverse();
+
+        sortNodes.forEach((node, idx) => {
+                let logs = this.state.nodeLogs.get(node);
+                let styleExtra = [styles.logHeader];
+                switch (node.state) {
+                    case 'running':
+                        styleExtra.push(styles.running);
+                        break;
+                    case 'pending':
+                        styleExtra.push(styles.pending);
+                        break;
+                    case 'successful':
+                        styleExtra.push(styles.successful);
+                        break;
+                    case 'failed':
+                        styleExtra.push(styles.failed);
+                        break;
                 }
-            });
-            sortNodes = sortNodes.reverse();
 
-            sortNodes.forEach((node, idx) => {
-                    let logs = this.state.nodeLogs.get(node);
-                    let styleExtra = [styles.logHeader];
-                    switch (node.state) {
-                        case 'running':
-                            styleExtra.push(styles.running);
-                            break;
-                        case 'pending':
-                            styleExtra.push(styles.pending);
-                            break;
-                        case 'successful':
-                            styleExtra.push(styles.successful);
-                            break;
-                        case 'failed':
-                            styleExtra.push(styles.failed);
-                            break;
-                    }
-
-                    let title = nodeTitle(node);
-                    let causedBy= null;
-                    if (idx !== 0) {
-                        causedBy = (<div className={styles.causedBy}>
+                let title = nodeTitle(node);
+                let causedBy = null;
+                if (idx !== 0) {
+                    causedBy = (<div className={styles.causedBy}>
                         Caused by</div>)
-                    }
-
-                    fullLogs.push((<div key={node.stage_id + '-header'} className={styleExtra.join(' ')}>
-                        {causedBy}
-                        {node.stage_id} {title} {node.state === 'failed' ? "(Failed)" : ""} {node.call_id ? node.call_id : ""}
-                        <div className={styles.rightHeader}>{node.started ? this.formatTime(node.started) : "pending"}</div>
-                    </div>));
-
-                    if (node.code_location) {
-                        fullLogs.push((<div key={node.stage_id + '-codeloc'} className={styles.codeLocation}>
-                            {node.code_location}
-                        </div>))
-                    }
-
-                    if (logs) {
-                        fullLogs.push(<div key={node.stage_id + '-log'} className={styles.logEntry}>{logs}</div>);
-                    }
                 }
-            );
 
-            stageId = this.state.node.stage_id;
+                fullLogs.push((<div key={node.id() + '-header'} className={styleExtra.join(' ')}>
+                    {causedBy}
+                    {node.id()} {title} {node.state === 'failed' ? "(Failed)" : ""} {node.call_id ? node.call_id : ""}
+                    <div className={styles.rightHeader}>{node.started ? this.formatTime(node.started) : "pending"}</div>
+                </div>));
 
-            if (this.state.node.started == null) {
-                triggered = "Triggered: Not triggered";
-            } else {
-                triggered = "Triggered: " + this.formatTime(this.state.node.started);
-            }
-
-            let callInfo = this.state.nodeCalls.get(this.state.node);
-
-            if (callInfo) {
-                if (callInfo.created_at) {
-                    call_queued = (<div>Queued: {this.formatTime(Date.parse(callInfo.created_at))}</div>)
+                if (node.code_location) {
+                    fullLogs.push((<div key={node.id() + '-codeloc'} className={styles.codeLocation}>
+                        {node.code_location}
+                    </div>))
                 }
-                if (callInfo.started_at) {
-                    call_started = (<div>Call Started: {this.formatTime(Date.parse(callInfo.started_at))}</div>)
-                }
-                if (callInfo.completed_at) {
-                    call_ended = (<div>Call Completed: {this.formatTime(Date.parse(callInfo.completed_at))}</div>)
+
+                if (logs) {
+                    fullLogs.push(<div key={node.id() + '-log'} className={styles.logEntry}>{logs}</div>);
                 }
             }
+        );
 
-            if (this.state.node.completed == null) {
-                finished = "Finished: Not completed";
-            } else {
-                finished = "Finished: " + this.formatTime(this.state.node.completed);
-            }
+        stageId = this.state.node.id();
 
-            if (this.state.node.completed == null) {
-                duration = " ...";
-            } else {
-                duration = (this.state.node.completed - this.state.node.started) + "ms";
-            }
+        if (this.state.node.started == null) {
+            triggered = "Triggered: Not triggered";
         } else {
-            stageId = "Graph";
-            if (this.state.node.main_ended == null) {
-                duration = " ...";
-            } else {
-                duration = (this.state.node.main_ended - this.state.node.created) + "ms";
+            triggered = "Triggered: " + this.formatTime(this.state.node.started);
+        }
+
+        let callInfo = this.state.nodeCalls.get(this.state.node);
+
+        if (callInfo) {
+            if (callInfo.created_at) {
+                call_queued = (<div>Queued: {this.formatTime(Date.parse(callInfo.created_at))}</div>)
+            }
+            if (callInfo.started_at) {
+                call_started = (<div>Call Started: {this.formatTime(Date.parse(callInfo.started_at))}</div>)
+            }
+            if (callInfo.completed_at) {
+                call_ended = (<div>Call Completed: {this.formatTime(Date.parse(callInfo.completed_at))}</div>)
             }
         }
+
+        if (this.state.node.completed == null) {
+            finished = "Finished: Not completed";
+        } else {
+            finished = "Finished: " + this.formatTime(this.state.node.completed);
+        }
+
+        if (this.state.node.completed == null) {
+            duration = " ...";
+        } else {
+            duration = (this.state.node.completed - this.state.node.started) + "ms";
+        }
+
 
         return (<div className={styles.nodeInfoBox}>
             <h3>{stageId} : {nodeTitle(this.state.node)}</h3>

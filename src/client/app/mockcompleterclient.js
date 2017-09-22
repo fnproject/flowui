@@ -24,7 +24,7 @@ class MockCompleterClient {
         let firstEvent = events[0];
         const firstEventTs = Date.parse(firstEvent.data.ts);
         let timeStart = Date.now();
-        const dialation = 1;
+        const dialation = 0.2;
 
         events.forEach((evt) => {
             let ts = Date.parse(evt.data.ts);

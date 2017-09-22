@@ -41,6 +41,7 @@
 
 .viewport {
     overflow: hidden;
+    margin: 5px;
 }
 
 .currentLine {

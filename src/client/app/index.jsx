@@ -8,6 +8,8 @@ import styles from './index.css'
 import {HashRouter as Router, Route, Switch} from 'react-router-dom';
 import MockCompleterClient from './mockcompleterclient.js';
 import CompleterWsClient from './completerclient.js';
+import {Button, ButtonGroup, Glyphicon} from 'react-bootstrap';
+import SpringyView from "./Springy.jsx";
 
 require('file-loader?name=[name].[ext]!./index.html');
 
@@ -20,6 +22,7 @@ class App extends React.Component {
             loadOnNew: true,
             currentGraph: null,
             currentNode: null,
+            mode: 'timeline',
         };
 
 
@@ -48,6 +51,7 @@ class App extends React.Component {
         this.renderCurrentGraph = this.renderCurrentGraph.bind(this);
         this.renderCurrentNode = this.renderCurrentNode.bind(this);
         this.onNodeSelected = this.onNodeSelected.bind(this);
+        this.setMode = this.setMode.bind(this);
     }
 
 
@@ -82,15 +86,21 @@ class App extends React.Component {
             );
         }
 
-        let live = true;
-        if (graph.completed) {
-            live = false;
+        if (this.state.mode === 'timeline') {
+            return (
+                <div>
+                    <GraphTimeline graph={graph} height='800' onNodeSelected={this.onNodeSelected}/>
+                </div>
+            );
+
+        } else {
+            return (
+                <div>
+                    <SpringyView graph={graph} height='800'  width='1024' onNodeSelected={this.onNodeSelected}/>
+                </div>
+            );
+
         }
-        return (
-            <div>
-                <GraphTimeline graph={graph} height='800' onNodeSelected={this.onNodeSelected}/>
-            </div>
-        );
     }
 
 
@@ -103,7 +113,8 @@ class App extends React.Component {
 
         return (
             <div>
-                <NodeDetail node={this.state.currentNode} nodeLogs={this.state.nodeLogs} nodeCalls={this.state.nodeCalls}/>
+                <NodeDetail node={this.state.currentNode} nodeLogs={this.state.nodeLogs}
+                            nodeCalls={this.state.nodeCalls}/>
             </div>
         );
     }
@@ -113,18 +124,17 @@ class App extends React.Component {
         this.state.currentNode = node;
         this.setState({currentNode: node});
 
-        if ((node != null) && (node.state !== 'graph')) {
-            let deps = Array.from(graph.findDepIds(node.stage_id));
+        if ((node != null)) {
+            let deps = Array.from(node.transitiveDeps(true));
             deps.reverse();
-            deps.push(node.stage_id);
+            deps.push(node);
 
             console.log(`node ${graph.graph_id}: ${node.stage_id} selected`);
 
             this.state.nodeLogs = new Map();
             this.state.nodeCalls = new Map();
 
-            for (let item of deps) {
-                let nodeDep = graph.getNode(item);
+            for (let nodeDep of deps) {
                 this.state.nodeLogs.set(nodeDep, null);
                 this.setState({nodeLogs: this.state.nodeLogs});
                 if (nodeDep.call_id) {
@@ -155,6 +165,10 @@ class App extends React.Component {
         }
     }
 
+    setMode(mode) {
+        this.setState({mode: mode});
+    }
+
     // Please note this currently only works for the first graph you create
     render() {
         let graphListItems = [];
@@ -178,9 +192,16 @@ class App extends React.Component {
         return (
             <div>
                 <div className={styles.graphlist}>
+                    {/*<ButtonGroup>*/}
+                        {/*<Button onClick={() => this.setMode('timeline')}*/}
+                                {/*active={this.state.mode === 'timeline'}><Glyphicon glyph="align-left"/></Button>*/}
+                        {/*<Button onClick={() => this.setMode('springy')}*/}
+                                {/*active={this.state.mode === 'springy'}><Glyphicon glyph="flash"/></Button>*/}
+                    {/*</ButtonGroup>*/}
                     {graphListItems}
                 </div>
                 <div className={styles.content}>
+
                     <div>
                         {this.renderCurrentGraph()}
                     </div>
@@ -191,7 +212,6 @@ class App extends React.Component {
             </div>
         );
     }
-
 }
 
 render((<Router>
