@@ -173,12 +173,12 @@ class ZoomLine extends React.Component {
             let estyle = {
 
                 height: relativeY(box[2]) + 'px',
-                left: this.relativeX(box[0]) + 'px',
-                width: this.relativeX(box[1]) - this.relativeX(box[0]) + 'px'
+                left: Math.floor(this.relativeX(box[0])) + 'px',
+                width: Math.ceil(this.relativeX(box[1]) - this.relativeX(box[0])) + 'px'
 
             };
             return (<div data-tooltip={box[2]} key={i} className={styles.graphblock}
-                         style={estyle}></div> );
+                         style={estyle}> </div> );
         });
 
         var leftShadeStyle = {
@@ -189,7 +189,7 @@ class ZoomLine extends React.Component {
 
         var rightShadeLeftPx = this.relativeX(this.state.cursorTs) + this.state.scrollBoxWidth;
         var rightShadeWidth = this.state.width - rightShadeLeftPx;
-
+       // console.log(`rsl ${rightShadeLeftPx} rsw : ${rightShadeWidth}`);
         var rightShadeStyle = {
             left: rightShadeLeftPx + 'px',
             width: rightShadeWidth + 'px',
@@ -197,9 +197,7 @@ class ZoomLine extends React.Component {
         };
 
         let leftPosition;
-        if (this.state.stopped) {
-            leftPosition = {visibility: 'hidden'};
-        } else if (this.state.graph.isLive()) {
+        if (this.state.graph.isLive()) {
             leftPosition = {left: this.relativeX(Date.now())};
         } else {
             leftPosition = {left: this.relativeX(this.state.graph.finished)};
@@ -213,12 +211,12 @@ class ZoomLine extends React.Component {
                      height: this.state.height + "px",
                  }}>
                 {elems}
-                <div className={styles.scrollboxshade} style={leftShadeStyle}></div>
+                <div className={styles.scrollboxshade} style={leftShadeStyle}> </div>
                 <div onMouseDown={this.onDragStart} className={styles.scrollbox} style={{
                     height: this.state.height + "px",
                     left: this.relativeX(this.state.cursorTs) + 'px',
                     width: this.state.scrollBoxWidth + 'px'
-                }}></div>
+                }}> </div>
                 <div className={styles.scrollboxshade} style={rightShadeStyle}></div>
                 <div className={styles.currentLine} style={leftPosition}>
                 </div>

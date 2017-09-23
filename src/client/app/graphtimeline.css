@@ -41,7 +41,7 @@
 
 .viewport {
     overflow: hidden;
-    margin: 5px;
+  //  padding: 5px;
 }
 
 .currentLine {
@@ -121,9 +121,7 @@
 
 .node.pending {
     position: relative;
-    background-image: url('./stripe_pending.png');
-    background-position: 0px 0px;
-    background-repeat: repeat;
+    background: url('./stripe_pending.png') repeat 0px 0px;
     z-index: 4;
 }
 
@@ -131,28 +129,23 @@
 
     border-top-right-radius: 0px;
     border-bottom-right-radius: 0px;
-    background-image: url('./stripe_run.png');
-    background-position: 0px 0px;
-    background-repeat: repeat;
+    background: url('./stripe_run.png') repeat 0px 0px;
     animation: animatedBackground 10s linear infinite;
 }
 
 .node.lifecycle {
-    background-color: lightblue;
-    background-position: 0px 0px;
+    background: lightblue 0px 0px;
     border-top-left-radius: 0px;
     border-bottom-left-radius: 0px;
 }
 
-.node.invokeFunction {
+.node.invokeFunction.successful {
     background: lightblue;
 }
 
 
 .node.invokeFunction.running {
-    background-image: url('./stripe_run_fn.png');
-    background-position: 0px 0px;
-    background-repeat: repeat;
+    background: url('./stripe_run_fn.png') repeat 0px 0px;
     animation: animatedBackground 10s linear infinite;}
 
 [data-tooltip] {
@@ -207,4 +200,9 @@
 [data-tooltip]:hover:before,
 [data-tooltip]:hover:after {
     visibility: visible;
+}
+
+
+.toolArea {
+    margin-right:60px;
 }

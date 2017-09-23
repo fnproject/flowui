@@ -154,11 +154,7 @@ class NodeDetail extends React.Component {
         return (<div className={styles.nodeInfoBox}>
             <h3>{stageId} : {nodeTitle(this.state.node)}</h3>
             <div style={{display: 'flex'}}>
-                <div style={{
-                    display: 'inline-block', minHeight: '200px',
-                    overflow: 'scroll',
-                    minWidth: '810px'
-                }}>
+                <div className={styles.logArea} >
                     {fullLogs}
                 </div>
                 <div className={styles.nodeInfo} style={{display: 'block'}}>

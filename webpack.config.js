@@ -51,11 +51,9 @@ var config = {
     },
     plugins: [
         new CopyWebpackPlugin([
-            // {output}/file.txt
             {from: 'src/client/app/background.png'},
             {from: 'src/client/app/app.css'},
-            {from: 'src/client/app/bootstrap.min.css'},
-            {from: 'src/client/app/bootstrap-theme.min.css'},
+            {from: 'node_modules/bootstrap3/dist', to:'bootstrap'},
         ])]
 };
 

@@ -2,7 +2,8 @@
 html { display: block; }
 
 body {
-    background-image: url('./background.png');
+    //background-image: url('./background.png');
+    background-color: white;
     display: block;
     margin: 8px;
     padding: 30px;

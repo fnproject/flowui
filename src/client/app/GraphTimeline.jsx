@@ -2,11 +2,14 @@ import React from 'react';
 
 import styles from './graphtimeline.css'
 import ZoomLine from "./ZoomLine.jsx";
+import {Button, ButtonGroup, Glyphicon} from 'react-bootstrap';
+import sizeMe from 'react-sizeme';
+
+const zoomLevels = [0.01, 0.03, 0.06, 0.075, 0.1, 0.2, 0.5];
 
 class GraphTimeline extends React.Component {
     constructor(props) {
         super(props);
-
         this.state = {
             onNodeSelected: props.onNodeSelected,
             graph: props.graph,
@@ -16,15 +19,18 @@ class GraphTimeline extends React.Component {
             cursorTs: props.graph.created,
             intervalTimer: -1,
             autoScroll: props.graph.isLive(),
+            autoVScroll: true,
             width: 1200,
             pendingWidth: 160,
 
             zoomLineHeight: 100,
-            viewPortWidth: props.width - 150,
+            viewPortWidth: props.size.width - 150,
             viewPortHeight: props.height - 100,
 
             height: props.height,
-            pxPerMs: 0.05,
+            zoomLevel: 2,
+            pxPerMs: zoomLevels[2],
+
             graphHeight: 0,
             dragging: false,
             dragStartY: 0,
@@ -50,33 +56,19 @@ class GraphTimeline extends React.Component {
         if (this.containerElem) {
             let update_width = this.containerElem.getBoundingClientRect().width - 50;
 
-            this.setState({width: update_width, viewPortWidth: update_width - this.state.pendingWidth});
+
         }
     }
 
-    debounce(func, wait, immediate) {
-        var timeout;
-        return function () {
-            var context = this, args = arguments;
-            var later = function () {
-                timeout = null;
-                if (!immediate) func.apply(context, args);
-            };
-            var callNow = immediate && !timeout;
-            clearTimeout(timeout);
-            timeout = setTimeout(later, wait);
-            if (callNow) func.apply(context, args);
-        };
-    };
 
     componentWillReceiveProps(props) {
         if (props.graph) {
 
             this.updateGraphDetails(props.graph)
-
         }
-        this.updateDimensions();
-        window.addEventListener("resize", this.debounce(this.updateDimensions, 100));
+        if (props.size) {
+            this.setState({width: props.size.width, viewPortWidth: props.size.width - this.state.pendingWidth});
+        }
 
     }
 
@@ -85,6 +77,13 @@ class GraphTimeline extends React.Component {
         return node.started !== node.completed;
 
     }
+
+    setZoomLevel(level) {
+        this.state.zoomLevel = level;
+        this.state.pxPerMs = zoomLevels[level];
+        this.updateGraphDetails(this.state.graph);
+    }
+
 
     updateGraphDetails(graph) {
 
@@ -105,8 +104,17 @@ class GraphTimeline extends React.Component {
 
         if (this.state.autoScroll && curDurationTs > (this.state.viewPortWidth / this.state.pxPerMs)) {
             update.cursorTs = graph.created + (curDurationTs - (this.state.viewPortWidth / this.state.pxPerMs));
-            update.verticalScrollRatio = 1.0;
+            if(this.state.autoVScroll){
+                update.verticalScrollRatio = 1.0;
+
+            }
+        }else{
+            update.cursorTs = Math.min(this.state.cursorTs,maxTs - this.state.viewPortWidth / this.state.pxPerMs);
+            update.cursorTs = Math.max(update.cursorTs,graph.created);
+
         }
+
+
 
         if (graph.isLive()) {
             update.maxTimeStamp = Date.now();
@@ -172,7 +180,7 @@ class GraphTimeline extends React.Component {
 
     manualScrollY(s) {
         //console.log("Scroll: ", s);
-        this.setState({autoScroll: false, verticalScrollRatio: s});
+        this.setState({autoScrollY:false,verticalScrollRatio: s});
     }
 
     updateScroll() {
@@ -182,6 +190,7 @@ class GraphTimeline extends React.Component {
             this.currentTimeout = setTimeout(this.updateScroll, 50);
         } else {
             this.scrolling = false;
+            this.setState({autoScroll: false});
         }
     }
 
@@ -353,7 +362,7 @@ class GraphTimeline extends React.Component {
                 position: 'absolute',
                 height: (this.state.nodeHeight - 10 ) + 'px',
                 width: '' + widthPx + 'px',
-                top: '' + (rank * this.state.nodeHeight) + 'px',
+                top: '' + (5 + (rank * this.state.nodeHeight)) + 'px',
                 left: startPx
             };
             let nodeLabel;
@@ -383,7 +392,7 @@ class GraphTimeline extends React.Component {
 
             let styleExtra = [styles.pending];
 
-            let deps = ""
+            let deps = "";
             if ((node.dependencies.length !== 0)) {
                 deps = "Dependencies: Stage " + node.dependencies.map(n => n.id());
             }
@@ -416,8 +425,10 @@ class GraphTimeline extends React.Component {
             <div ref={(input) => {
                 this.containerElem = input;
             }} style={{width: '100%'}}>
+
                 <div className={styles.overview}
                      style={{width: this.state.width + 'px', height: this.state.height + 'px'}}>
+
                     <div className={styles.viewport}
                          style={{width: this.state.viewPortWidth - 3 + 'px', height: this.state.viewPortHeight + 'px'}}>
 
@@ -431,7 +442,25 @@ class GraphTimeline extends React.Component {
                             </div>
                             {nodeElements}
                         </div>
-
+                        <div style={{
+                            zIndex: 5,
+                            display: 'block',
+                            position: 'absolute',
+                            left: this.state.viewPortWidth - 150,
+                            top: this.state.viewPortHeight - 30,
+                        }}>
+                            <ButtonGroup>
+                                <Button disabled={!this.state.graph.isLive()}
+                                        onClick={() => this.setState({autoScroll: !this.state.autoScroll})}><Glyphicon
+                                    glyph={this.state.autoScroll ? "pause" : "play"}/></Button>
+                                <Button disabled={this.state.zoomLevel === 0}
+                                        onClick={() => this.setZoomLevel(this.state.zoomLevel - 1)}><Glyphicon
+                                    glyph="zoom-out"/></Button>
+                                <Button disabled={this.state.zoomLevel + 1 >= zoomLevels.length}
+                                        onClick={() => this.setZoomLevel(this.state.zoomLevel + 1)}><Glyphicon
+                                    glyph="zoom-in"/></Button>
+                            </ButtonGroup>
+                        </div>
                         <div className={styles.verticalScroll} style={{
                             height: this.state.viewPortHeight + 'px',
                             left: (this.state.viewPortWidth - 25) + 'px', top: '0px', position: 'absolute',
@@ -444,7 +473,10 @@ class GraphTimeline extends React.Component {
                                      height: this.state.scrollBarHeight + 'px',
                                  }}>
                             </div>
+
+
                         </div>
+
                         <div className={styles.pendingView} style={{
                             width: this.state.pendingWidth - 3 + 'px', position: 'absolute',
                             height: this.state.viewPortHeight + 'px', left: this.state.viewPortWidth + 'px', top: '0px'
@@ -461,12 +493,15 @@ class GraphTimeline extends React.Component {
                               maxTs={this.state.maxTimeStamp + 1000}
                               live={this.state.live}
                               height={this.state.zoomLineHeight - 4}
-                              onScrollChanged={this.manualScrollX} width={this.state.viewPortWidth + 3}/>
+                              onScrollChanged={this.manualScrollX}
+                              width={this.state.viewPortWidth + 3}/>
+
 
                 </div>
+
             </div>
         );
     }
 }
 
-export default GraphTimeline;
+export default sizeMe()(GraphTimeline);
