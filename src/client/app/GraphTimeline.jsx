@@ -102,10 +102,13 @@ class GraphTimeline extends React.Component {
         let curDurationTs = (maxTs - graph.created);
 
 
-        if (this.state.autoScroll && curDurationTs > (this.state.viewPortWidth / this.state.pxPerMs)) {
-            update.cursorTs = graph.created + (curDurationTs - (this.state.viewPortWidth / this.state.pxPerMs));
+        if (this.state.autoScroll){
+            if(curDurationTs > (this.state.viewPortWidth / this.state.pxPerMs)) {
+                update.cursorTs = graph.created + (curDurationTs - (this.state.viewPortWidth / this.state.pxPerMs));
+            }
             if(this.state.autoVScroll){
                 update.verticalScrollRatio = 1.0;
+                update.verticalScrollPosition = this.state.viewPortHeight -this.state.scrollBarHeight;
 
             }
         }else{
@@ -180,7 +183,7 @@ class GraphTimeline extends React.Component {
 
     manualScrollY(s) {
         //console.log("Scroll: ", s);
-        this.setState({autoScrollY:false,verticalScrollRatio: s});
+        this.setState({autoVScroll:false,verticalScrollRatio: s});
     }
 
     updateScroll() {
@@ -451,7 +454,7 @@ class GraphTimeline extends React.Component {
                         }}>
                             <ButtonGroup>
                                 <Button disabled={!this.state.graph.isLive()}
-                                        onClick={() => this.setState({autoScroll: !this.state.autoScroll})}><Glyphicon
+                                        onClick={() => this.setState({autoScroll: !this.state.autoScroll,autoVScroll:!this.state.autoScroll})}><Glyphicon
                                     glyph={this.state.autoScroll ? "pause" : "play"}/></Button>
                                 <Button disabled={this.state.zoomLevel === 0}
                                         onClick={() => this.setZoomLevel(this.state.zoomLevel - 1)}><Glyphicon

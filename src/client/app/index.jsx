@@ -183,7 +183,7 @@ class App extends React.Component {
                        this.onGraphSelected(graph.data.graph_id);
                        e.stopPropagation();
                        e.nativeEvent.stopImmediatePropagation();
-                   }}>{graph.data.function_id} {graph.data.graph_id}</a>
+                   }}>{graph.data.function_id}<div className={styles.listGraphId}>{graph.data.graph_id}</div></a>
 
             </div>);
             graphListItems.push(elem);
