@@ -50,7 +50,7 @@ class Controller {
             }
 
         }
-        this.deBounce(() => this.on_changed(this), 100);
+        this.deBounce(() => this.on_changed(this), 200);
     }
 
     //debounces the number of updates to the runtime down to  a max of 10x per second

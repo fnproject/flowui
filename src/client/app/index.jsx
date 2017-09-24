@@ -8,7 +8,6 @@ import styles from './index.css'
 import {HashRouter as Router, Route, Switch} from 'react-router-dom';
 import MockCompleterClient from './mockcompleterclient.js';
 import CompleterWsClient from './completerclient.js';
-import {Button, ButtonGroup, Glyphicon} from 'react-bootstrap';
 import SpringyView from "./Springy.jsx";
 
 require('file-loader?name=[name].[ext]!./index.html');
@@ -18,15 +17,22 @@ class App extends React.Component {
     constructor(props) {
         super(props);
 
+
         this.state = {
             loadOnNew: true,
-            currentGraph: null,
+            currentGraphId: null,
             currentNode: null,
             mode: 'timeline',
         };
 
+        this.onGraphSelected = this.onGraphSelected.bind(this);
+        this.renderCurrentGraph = this.renderCurrentGraph.bind(this);
+        this.renderCurrentNode = this.renderCurrentNode.bind(this);
+        this.onNodeSelected = this.onNodeSelected.bind(this);
+        this.setMode = this.setMode.bind(this);
+        this.loadNodeData = this.loadNodeData.bind(this);
 
-        this.state.currentGraph = null;
+        this.state.currentGraphId = null;
 
         let client;
         if (props.match.path === '/mock') {
@@ -37,21 +43,17 @@ class App extends React.Component {
 
         this.state.controller = new Controller(client, (c) => {
             this.state.controller = c;
-            if (!this.state.currentGraph && c.getKnownGraphs().length > 0 && this.state.loadOnNew) {
+            if (!this.state.currentGraphId && c.getKnownGraphs().length > 0 && this.state.loadOnNew) {
                 this.onGraphSelected(c.getKnownGraphs().slice(-1)[0].data.graph_id);
             } else {
                 this.setState(this.state);
+                this.loadNodeData();
             }
+
         });
 
         this.state.fnclient = new FnClient("/fn");
 
-
-        this.onGraphSelected = this.onGraphSelected.bind(this);
-        this.renderCurrentGraph = this.renderCurrentGraph.bind(this);
-        this.renderCurrentNode = this.renderCurrentNode.bind(this);
-        this.onNodeSelected = this.onNodeSelected.bind(this);
-        this.setMode = this.setMode.bind(this);
     }
 
 
@@ -61,15 +63,17 @@ class App extends React.Component {
 
     onGraphSelected(graphId) {
         console.log(`selected graph ${graphId}`);
-        this.state.currentGraph = graphId;
+        this.state.currentGraphId = graphId;
         this.state.controller.subscribe(graphId);
         this.state.currentNode = null;
+        this.watchedNodeState = new Map();
+
         this.setState(this.state);
 
     }
 
     renderCurrentGraph() {
-        if (this.state.currentGraph == null) {
+        if (this.state.currentGraphId == null) {
             return (
                 <div>
                     Select a graph or start running.
@@ -77,7 +81,7 @@ class App extends React.Component {
             );
         }
         var activeGraphs = this.state.controller.getActiveGraphs();
-        var graph = activeGraphs.get(this.state.currentGraph);
+        var graph = activeGraphs.get(this.state.currentGraphId);
         if (graph == null) {
             return (
                 <div>
@@ -96,7 +100,7 @@ class App extends React.Component {
         } else {
             return (
                 <div>
-                    <SpringyView graph={graph} height='800'  width='1024' onNodeSelected={this.onNodeSelected}/>
+                    <SpringyView graph={graph} height='800' width='1024' onNodeSelected={this.onNodeSelected}/>
                 </div>
             );
 
@@ -120,48 +124,64 @@ class App extends React.Component {
     }
 
 
+    loadCallLogs(node) {
+        console.log("Loading call data for " + node.id());
+        let index = node.function_id.indexOf("/");
+        let appId = node.function_id.substring(0, index);
+        this.state.fnclient.loadLogs(appId, node.call_id)
+            .then((logs) => {
+                if (logs !== "") {
+                    this.state.nodeLogs.set(node, logs);
+                    this.setState({nodeLogs: this.state.nodeLogs});
+                }
+            })
+            .catch((e) => {
+                console.log("error loading logs: " + e.message);
+                throw e;
+            });
+
+        this.state.fnclient.loadCall(appId, node.call_id)
+            .then((callInfo) => {
+                this.state.nodeCalls.set(node, callInfo);
+                this.setState({nodeCalls: this.state.nodeCalls});
+            })
+            .catch((e) => {
+                console.log("error loading call: " + e.message);
+                throw e;
+            });
+    }
+
+    loadNodeData() {
+        let currentNode = this.state.currentNode;
+        if (currentNode !== null) {
+            let deps = currentNode.transitiveDeps(true);
+            deps.add(currentNode);
+            deps.forEach(node => {
+                    if (!this.state.nodeLogs.has(node)) {
+                        this.state.nodeLogs.set(node, null);
+                    }
+                    let lastState = this.watchedNodeState.get(node.id());
+                    if (!lastState && node.isCompleted()) {
+                        this.watchedNodeState.set(node.id(), true);
+                        if (node.call_id) {
+                            this.loadCallLogs(node);
+                        }
+                    }
+                }
+            );
+        }
+    }
+
     onNodeSelected(graph, node) {
         this.state.currentNode = node;
         this.setState({currentNode: node});
-
-        if ((node != null)) {
-            let deps = Array.from(node.transitiveDeps(true));
-            deps.reverse();
-            deps.push(node);
-
+        this.watchedNodeState = new Map();
+        if ((node !== null)) {
             console.log(`node ${graph.graph_id}: ${node.stage_id} selected`);
-
             this.state.nodeLogs = new Map();
             this.state.nodeCalls = new Map();
-
-            for (let nodeDep of deps) {
-                this.state.nodeLogs.set(nodeDep, null);
-                this.setState({nodeLogs: this.state.nodeLogs});
-                if (nodeDep.call_id) {
-                    let index = nodeDep.function_id.indexOf("/");
-                    let appId = nodeDep.function_id.substring(0, index);
-                    this.state.fnclient.loadLogs(appId, nodeDep.call_id)
-                        .then((logs) => {
-                            if (logs !== "") {
-                                this.state.nodeLogs.set(nodeDep, logs);
-                                this.setState({nodeLogs: this.state.nodeLogs});
-                            }
-                        })
-                        .catch((e) => {
-                            console.log("error loading logs: " + e.message);
-                            throw e;
-                        });
-                    this.state.fnclient.loadCall(appId, nodeDep.call_id)
-                        .then((callInfo) => {
-                            this.state.nodeCalls.set(nodeDep, callInfo);
-                            this.setState({nodeCalls: this.state.nodeCalls});
-                        })
-                        .catch((e) => {
-                            console.log("error loading call: " + e.message);
-                            throw e;
-                        });
-                }
-            }
+            this.loadNodeData();
+            //this.setState({nodeLogs: this.state.nodeLogs, nodeCalls: this.state.nodeCalls});
         }
     }
 
@@ -169,7 +189,7 @@ class App extends React.Component {
         this.setState({mode: mode});
     }
 
-    // Please note this currently only works for the first graph you create
+// Please note this currently only works for the first graph you create
     render() {
         let graphListItems = [];
         this.state.controller.getKnownGraphs().forEach((graph) => {
@@ -183,7 +203,9 @@ class App extends React.Component {
                        this.onGraphSelected(graph.data.graph_id);
                        e.stopPropagation();
                        e.nativeEvent.stopImmediatePropagation();
-                   }}>{graph.data.function_id}<div className={styles.listGraphId}>{graph.data.graph_id}</div></a>
+                   }}>{graph.data.function_id}
+                    <div className={styles.listGraphId}>{graph.data.graph_id}</div>
+                </a>
 
             </div>);
             graphListItems.push(elem);
@@ -192,12 +214,6 @@ class App extends React.Component {
         return (
             <div>
                 <div className={styles.graphlist}>
-                    {/*<ButtonGroup>*/}
-                        {/*<Button onClick={() => this.setMode('timeline')}*/}
-                                {/*active={this.state.mode === 'timeline'}><Glyphicon glyph="align-left"/></Button>*/}
-                        {/*<Button onClick={() => this.setMode('springy')}*/}
-                                {/*active={this.state.mode === 'springy'}><Glyphicon glyph="flash"/></Button>*/}
-                    {/*</ButtonGroup>*/}
                     {graphListItems}
                 </div>
                 <div className={styles.content}>

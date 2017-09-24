@@ -10,6 +10,7 @@ class Node {
         this.isPending = this.isPending.bind(this);
         this.conflictsWith = this.conflictsWith.bind(this);
         this.deps = this.deps.bind(this);
+        this.depCache = new Map();
     }
 
     id() {
@@ -36,13 +37,23 @@ class Node {
     }
 
     dependsOn(otherNode) {
-        return this.dependencies.some((n) => {
-            return n === otherNode
+        if(this.depCache.has(otherNode.id())){
+            return this.depCache.get(otherNode.id());
+        }
+
+        let val =  this.dependencies.some((n) => {
+            return n === otherNode || n.dependsOn(otherNode)
         });
+        this.depCache.set(otherNode.id(),val);
+        return val;
     }
 
     isPending() {
         return this.state === 'pending';
+    }
+
+    isCompleted(){
+        return this.completed  > 0;
     }
 
     callDeps(){
@@ -66,9 +77,11 @@ class Node {
         let transitiveDependenciesOfNode = new Set(depsOfNode);
         depsOfNode.forEach((dep) => {
             dep.transitiveDeps(includeCaller).forEach((transitiveDep) => transitiveDependenciesOfNode.add(transitiveDep));
+            transitiveDependenciesOfNode.add(dep);
         });
 
         if(includeCaller && this.caller){
+            transitiveDependenciesOfNode.add(this.caller);
             this.caller.transitiveDeps(true).forEach((d)=>transitiveDependenciesOfNode.add(d));
         }
         return transitiveDependenciesOfNode;
@@ -224,7 +237,6 @@ class Graph {
                     stage.state = "successful";
                     return stage;
                 });
-                this.main_ended = Date.parse(evtData.ts);
             }
                 break;
             case 'model.GraphCompletedEvent' : {

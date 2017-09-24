@@ -46,19 +46,12 @@ class GraphTimeline extends React.Component {
         this.manualScrollX = this.manualScrollX.bind(this);
         this.manualScrollX = this.manualScrollX.bind(this);
         this.onDragStart = this.onDragStart.bind(this);
-        this.updateDimensions = this.updateDimensions.bind(this);
         this.isNodeShownByDefault = this.isNodeShownByDefault.bind(this);
         this.updateScroll = this.updateScroll.bind(this);
+        this.playPauseButtonClicked = this.playPauseButtonClicked.bind(this);
     }
 
 
-    updateDimensions() {
-        if (this.containerElem) {
-            let update_width = this.containerElem.getBoundingClientRect().width - 50;
-
-
-        }
-    }
 
 
     componentWillReceiveProps(props) {
@@ -172,8 +165,6 @@ class GraphTimeline extends React.Component {
 
     componentDidMount() {
         this.updateGraphDetails(this.state.graph);
-
-        this.updateDimensions();
         this.startWatch();
     }
 
@@ -237,6 +228,21 @@ class GraphTimeline extends React.Component {
             <div className={styles.hdepline} style={depLineStyle}>&nbsp;</div>
         </div>);
     }
+
+
+    playPauseButtonClicked(){
+        let newState = true;
+        if(this.state.autoScroll){
+            newState = false;
+        }
+
+        if(newState && this.state.selectedNode){
+            this.state.selectedNode = null;
+            this.state.onNodeSelected(this.state.graph, null);
+        }
+        this.setState({autoScroll: newState,autoVScroll:newState});
+    }
+
 
     // TODO: Use somebody elses scroll bar.
     onDragStart(e) {
@@ -454,7 +460,7 @@ class GraphTimeline extends React.Component {
                         }}>
                             <ButtonGroup>
                                 <Button disabled={!this.state.graph.isLive()}
-                                        onClick={() => this.setState({autoScroll: !this.state.autoScroll,autoVScroll:!this.state.autoScroll})}><Glyphicon
+                                        onClick={() => this.playPauseButtonClicked()}><Glyphicon
                                     glyph={this.state.autoScroll ? "pause" : "play"}/></Button>
                                 <Button disabled={this.state.zoomLevel === 0}
                                         onClick={() => this.setZoomLevel(this.state.zoomLevel - 1)}><Glyphicon

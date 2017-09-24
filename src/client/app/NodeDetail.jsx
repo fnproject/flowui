@@ -1,6 +1,7 @@
 import React from 'react';
 
 import styles from './nodedetail.css';
+import {Glyphicon} from 'react-bootstrap';
 
 class NodeDetail extends React.Component {
 
@@ -41,25 +42,23 @@ class NodeDetail extends React.Component {
 
     render() {
         let fullLogs = [];
-        let duration;
-        let stageId;
         let triggered = "";
         let call_queued = "";
+        let call_total = "";
+        let call_running = "";
 
-        let call_started = "";
-        let call_ended = "";
-
-        let finished = "";
 
         function nodeTitle(node) {
-            if (node.op === 'main' || node.op === 'invokeFunction') {
+            if (node.op === 'main') {
+                return node.function_id + " (main call)"
+            } else if (node.op === 'invokeFunction') {
                 return node.function_id;
             } else {
                 return node.op;
             }
         }
 
-        var sortNodes = Array.from(this.state.nodeLogs.keys());
+        let sortNodes = Array.from(this.state.nodeLogs.keys());
         sortNodes = sortNodes.sort((a, b) => {
             if (a.started && b.started) {
                 return a.started - b.started;
@@ -68,58 +67,77 @@ class NodeDetail extends React.Component {
             } else if (!a.started && b.started) {
                 return 1;
             } else {
+                if (a.dependsOn(b)) {
+                    return 1;
+                } else if (b.dependsOn(a)) {
+                    return -1;
+                }
                 return a.id().localeCompare(b.id());
             }
         });
         sortNodes = sortNodes.reverse();
+        let prevNode;
 
         sortNodes.forEach((node, idx) => {
                 let logs = this.state.nodeLogs.get(node);
-                let styleExtra = [styles.logHeader];
+                let badgeStyle = [];
+                let icon = "";
                 switch (node.state) {
                     case 'running':
-                        styleExtra.push(styles.running);
+                        badgeStyle = styles.running;
+                        icon = "retweet";
                         break;
                     case 'pending':
-                        styleExtra.push(styles.pending);
+                        badgeStyle = styles.pending;
+                        icon = "clock";
                         break;
                     case 'successful':
-                        styleExtra.push(styles.successful);
+                        badgeStyle = styles.successful;
+                        icon = "ok";
                         break;
                     case 'failed':
-                        styleExtra.push(styles.failed);
+                        badgeStyle = styles.failed;
+                        icon = "remove";
                         break;
                 }
 
                 let title = nodeTitle(node);
-                let causedBy = null;
+                let currentNode = [];
+                let outerTitle = "";
                 if (idx !== 0) {
-                    causedBy = (<div className={styles.causedBy}>
-                        Caused by</div>)
+                    outerTitle = (<div className={styles.causedBy}>
+                        {prevNode && (prevNode.caller === node) ? "created by" : "caused by"}</div>);
                 }
 
-                fullLogs.push((<div key={node.id() + '-header'} className={styleExtra.join(' ')}>
-                    {causedBy}
-                    {node.id()} {title} {node.state === 'failed' ? "(Failed)" : ""} {node.call_id ? node.call_id : ""}
-                    <div className={styles.rightHeader}>{node.started ? this.formatTime(node.started) : "pending"}</div>
-                </div>));
+                currentNode.push(
+                    (<div key={node.id() + '-header'} className={[styles.logHeader, badgeStyle].join(" ")}>
+                        <Glyphicon glyph={icon}/> {title} {node.call_id ? node.call_id : ""}
+                        <div
+                            className={styles.rightHeader}>  {node.started ? this.formatTime(node.started) : "pending"}</div>
+                    </div>));
 
                 if (node.code_location) {
-                    fullLogs.push((<div key={node.id() + '-codeloc'} className={styles.codeLocation}>
+                    currentNode.push((<div key={node.id() + '-codeloc'} className={styles.codeLocation}>
                         {node.code_location}
                     </div>))
                 }
 
                 if (logs) {
-                    fullLogs.push(<div key={node.id() + '-log'} className={styles.logEntry}>{logs}</div>);
+                    currentNode.push(<div key={node.id() + '-log'} className={styles.logEntry}>{logs}</div>);
                 }
+                fullLogs.push((<div key={node.id()} className={styles.logNode + (idx === 0 ? " " + styles.mainNode : "")}>
+                    {outerTitle}
+                    <div className={styles.logNodeInner}>
+                        {currentNode}
+                    </div>
+                </div>));
+                prevNode = node;
             }
         );
 
-        stageId = this.state.node.id();
 
         if (this.state.node.started == null) {
-            triggered = "Triggered: Not triggered";
+            triggered = "";
         } else {
             triggered = "Triggered: " + this.formatTime(this.state.node.started);
         }
@@ -127,44 +145,33 @@ class NodeDetail extends React.Component {
         let callInfo = this.state.nodeCalls.get(this.state.node);
 
         if (callInfo) {
-            if (callInfo.created_at) {
-                call_queued = (<div>Queued: {this.formatTime(Date.parse(callInfo.created_at))}</div>)
+            if (callInfo.created_at && callInfo.started_at) {
+                call_queued = (<div>Queued: {Date.parse(callInfo.started_at) - Date.parse(callInfo.created_at)}ms</div>)
             }
-            if (callInfo.started_at) {
-                call_started = (<div>Call Started: {this.formatTime(Date.parse(callInfo.started_at))}</div>)
+            if (callInfo.started_at && callInfo.completed_at) {
+                call_running = (
+                    <div>Running: {Date.parse(callInfo.completed_at) - Date.parse(callInfo.started_at)}ms</div>)
             }
-            if (callInfo.completed_at) {
-                call_ended = (<div>Call Completed: {this.formatTime(Date.parse(callInfo.completed_at))}</div>)
-            }
-        }
 
-        if (this.state.node.completed == null) {
-            finished = "Finished: Not completed";
-        } else {
-            finished = "Finished: " + this.formatTime(this.state.node.completed);
-        }
-
-        if (this.state.node.completed == null) {
-            duration = " ...";
-        } else {
-            duration = (this.state.node.completed - this.state.node.started) + "ms";
+            if (callInfo.created_at && callInfo.completed_at) {
+                call_total = (<div>Total: {Date.parse(callInfo.completed_at) - Date.parse(callInfo.created_at)}ms</div>)
+            }
         }
 
 
         return (<div className={styles.nodeInfoBox}>
-            <h3>{stageId} : {nodeTitle(this.state.node)}</h3>
+            <h3>Stage details</h3>
             <div style={{display: 'flex'}}>
-                <div className={styles.logArea} >
+                <div className={styles.logArea}>
                     {fullLogs}
                 </div>
                 <div className={styles.nodeInfo} style={{display: 'block'}}>
                     Created: {this.formatTime(this.state.node.created)}<br/>
                     {triggered}<br/>
                     {call_queued}
-                    {call_started}
-                    {call_ended}
-                    {finished}<br/>
-                    Duration: {duration}<br/>
+                    {call_running}
+                    {call_total}
+
                 </div>
             </div>
         </div>);
