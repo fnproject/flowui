@@ -111,10 +111,12 @@ class NodeDetail extends React.Component {
 
                 currentNode.push(
                     (<div key={node.id() + '-header'} className={[styles.logHeader, badgeStyle].join(" ")}>
+                        <div className={styles.rightHeader}>{node.started ? this.formatTime(node.started) : "pending"}</div>
                         <Glyphicon glyph={icon}/> {title} 
-                        <span key={node.id() + '-callid'} className={styles.callId}>{node.call_id ? node.call_id : ""}</span>
-                        <div className={styles.rightHeader}>  {node.started ? this.formatTime(node.started) : "pending"}</div>
-                        <span key={node.id() + '-codeloc'} className={styles.codeLocation}>{node.code_location}</span>
+                        <div key={node.id() + '-calldetails'} className={styles.callDetails}>
+                            <div key={node.id() + '-callid'} className={styles.callId}>{node.call_id ? "Call ID: " + node.call_id : ""}</div>
+                            <div key={node.id() + '-codeloc'} className={styles.codeLocation}>Code Location: {node.code_location}</div>
+                        </div>
                     </div>));
 
                 if (logs) {
@@ -153,7 +155,6 @@ class NodeDetail extends React.Component {
             }
         }
 
-
         return (<div className={styles.nodeInfoBox}>
             <h3>Stage details</h3>
             <div style={{display: 'flex'}}>
@@ -166,11 +167,9 @@ class NodeDetail extends React.Component {
                     {call_queued}
                     {call_running}
                     {call_total}
-
                 </div>
             </div>
         </div>);
-
 
     }
 }

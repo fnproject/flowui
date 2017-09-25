@@ -1,8 +1,12 @@
 
 html { display: block; }
 
+html,body { height:100%; 
+    display: flex;
+    flex-direction: column;}
+
 body {
-    //background-image: url('./background.png');
+    /* background-image: url('./background.png');*/
     background-color: white;
     display: block;
     margin: 8px;
