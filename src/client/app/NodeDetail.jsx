@@ -37,7 +37,7 @@ class NodeDetail extends React.Component {
         if (timeStamp == null) {
             return " ...";
         }
-        return hours.substr(-2) + ':' + minutes.substr(-2) + ':' + seconds.substr(-2) + '.' + milliSeconds.substr(-2);
+        return hours.substr(-2) + ':' + minutes.substr(-2) + ':' + seconds.substr(-2);
     }
 
     render() {
@@ -111,16 +111,11 @@ class NodeDetail extends React.Component {
 
                 currentNode.push(
                     (<div key={node.id() + '-header'} className={[styles.logHeader, badgeStyle].join(" ")}>
-                        <Glyphicon glyph={icon}/> {title} {node.call_id ? node.call_id : ""}
-                        <div
-                            className={styles.rightHeader}>  {node.started ? this.formatTime(node.started) : "pending"}</div>
+                        <Glyphicon glyph={icon}/> {title} 
+                        <span key={node.id() + '-callid'} className={styles.callId}>{node.call_id ? node.call_id : ""}</span>
+                        <div className={styles.rightHeader}>  {node.started ? this.formatTime(node.started) : "pending"}</div>
+                        <span key={node.id() + '-codeloc'} className={styles.codeLocation}>{node.code_location}</span>
                     </div>));
-
-                if (node.code_location) {
-                    currentNode.push((<div key={node.id() + '-codeloc'} className={styles.codeLocation}>
-                        {node.code_location}
-                    </div>))
-                }
 
                 if (logs) {
                     currentNode.push(<div key={node.id() + '-log'} className={styles.logEntry}>{logs}</div>);
