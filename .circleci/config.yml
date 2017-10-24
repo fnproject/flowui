@@ -39,6 +39,6 @@ jobs:
           command: |
                   if [ "${CIRCLE_BRANCH}" == "master" ]; then
                     docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}
-                    docker tag app fnproject/completer:ui
-                    docker push fnproject/completer:ui
+                    docker tag app fnproject/flow:ui
+                    docker push fnproject/flow:ui
                   fi
