@@ -206,3 +206,17 @@
 .toolArea {
     margin-right:60px;
 }
+
+
+.verticalLine {
+    border-left: 1px dashed black;
+    width:1px;
+    position: absolute;
+}
+
+.horizLine {
+    border-bottom: 1px dashed black;
+    height:1px;
+    position: absolute;
+
+}

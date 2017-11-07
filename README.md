@@ -1,4 +1,4 @@
-# FnFlow  UI  
+# Fn Flow  UI  
 
 
 This is a demo-ware visualisation tool for showing what's going on with FnFlow in real time. 

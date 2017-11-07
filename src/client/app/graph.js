@@ -56,10 +56,6 @@ class Node {
         return this.completed  > 0;
     }
 
-    callDeps(){
-        return Array.from(this.deps()).push(this.caller);
-    }
-
     deps() {
         let deps = Array.from(this.dependencies);
         if(this.caller!=null && deps.length ===0){
