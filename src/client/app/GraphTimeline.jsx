@@ -51,22 +51,21 @@ class GraphTimeline extends React.Component {
         this.playPauseButtonClicked = this.playPauseButtonClicked.bind(this);
     }
 
+
+
+
     componentWillReceiveProps(props) {
         if (props.graph) {
 
             this.updateGraphDetails(props.graph)
         }
         if (props.size) {
-            this.setState({
-                              width: props.size.width,
-                              viewPortWidth: props.size.width - this.state.pendingWidth
-                          });
+            this.setState({width: props.size.width, viewPortWidth: props.size.width - this.state.pendingWidth});
         }
 
     }
 
-    // show  this node from the default view  - hides messy no-op nodes that break vertical density
-    //  (TODO remove this when we have parent-heritage)
+    // show  this node from the default view  - hides messy no-op nodes that break vertical density  (TODO remove this when we have parent-heritage)
     isNodeShownByDefault(node) {
         return node.started !== node.completed;
 
@@ -78,7 +77,9 @@ class GraphTimeline extends React.Component {
         this.updateGraphDetails(this.state.graph);
     }
 
+
     updateGraphDetails(graph) {
+
 
         var newGraph = graph !== this.state.graph;
         let update = {graph};
@@ -89,28 +90,27 @@ class GraphTimeline extends React.Component {
             this.startWatch();
         }
 
+
         const maxTs = graph.isLive() ? Date.now() : graph.finished;
         let curDurationTs = (maxTs - graph.created);
 
-        if (this.state.autoScroll) {
-            if (curDurationTs > (this.state.viewPortWidth / this.state.pxPerMs)) {
-                update.cursorTs =
-                    graph.created + (curDurationTs - (this.state.viewPortWidth
-                                                      / this.state.pxPerMs));
+
+        if (this.state.autoScroll){
+            if(curDurationTs > (this.state.viewPortWidth / this.state.pxPerMs)) {
+                update.cursorTs = graph.created + (curDurationTs - (this.state.viewPortWidth / this.state.pxPerMs));
             }
-            if (this.state.autoVScroll) {
+            if(this.state.autoVScroll){
                 update.verticalScrollRatio = 1.0;
-                update.verticalScrollPosition =
-                    this.state.viewPortHeight - this.state.scrollBarHeight;
+                update.verticalScrollPosition = this.state.viewPortHeight -this.state.scrollBarHeight;
 
             }
-        } else {
-            update.cursorTs =
-                Math.min(this.state.cursorTs, maxTs - this.state.viewPortWidth
-                                              / this.state.pxPerMs);
-            update.cursorTs = Math.max(update.cursorTs, graph.created);
+        }else{
+            update.cursorTs = Math.min(this.state.cursorTs,maxTs - this.state.viewPortWidth / this.state.pxPerMs);
+            update.cursorTs = Math.max(update.cursorTs,graph.created);
 
         }
+
+
 
         if (graph.isLive()) {
             update.maxTimeStamp = Date.now();
@@ -118,8 +118,7 @@ class GraphTimeline extends React.Component {
             update.maxTimeStamp = graph.finished;
         }
 
-        let lastGraphEvent = graph.all_events.length > 0 ? graph.all_events[graph.all_events.length
-                                                                            - 1] : null;
+        let lastGraphEvent = graph.all_events.length > 0 ? graph.all_events[graph.all_events.length - 1] : null;
 
         let timeline;
         if (this.state.lastEvent !== lastGraphEvent) {
@@ -130,8 +129,7 @@ class GraphTimeline extends React.Component {
             timeline = this.state.timeline;
         }
 
-        let graphHeight = Math.max(this.state.viewPortHeight, this.state.nodeHeight
-                                                              * (timeline.maxRanks()));
+        let graphHeight = Math.max(this.state.viewPortHeight, this.state.nodeHeight * (timeline.maxRanks()));
         update.graphHeight = graphHeight;
         let maxScroll = Math.max(0, graphHeight - this.state.viewPortHeight);
         update.maxScroll = maxScroll;
@@ -150,8 +148,7 @@ class GraphTimeline extends React.Component {
 
         update.selectedDeps = selectedDeps;
         if (maxScroll > 0) {
-            update.scrollBarHeight =
-                this.state.viewPortHeight * (this.state.viewPortHeight / graphHeight);
+            update.scrollBarHeight = this.state.viewPortHeight * (this.state.viewPortHeight / graphHeight);
         } else {
             update.scrollBarHeight = this.state.viewPortHeight;
         }
@@ -177,7 +174,7 @@ class GraphTimeline extends React.Component {
 
     manualScrollY(s) {
         //console.log("Scroll: ", s);
-        this.setState({autoVScroll: false, verticalScrollRatio: s});
+        this.setState({autoVScroll:false,verticalScrollRatio: s});
     }
 
     updateScroll() {
@@ -197,6 +194,7 @@ class GraphTimeline extends React.Component {
             this.scrolling = true;
         }
     }
+
 
     selectNode(node) {
         if (node === this.state.selectedNode) {
@@ -231,18 +229,20 @@ class GraphTimeline extends React.Component {
         </div>);
     }
 
-    playPauseButtonClicked() {
+
+    playPauseButtonClicked(){
         let newState = true;
-        if (this.state.autoScroll) {
+        if(this.state.autoScroll){
             newState = false;
         }
 
-        if (newState && this.state.selectedNode) {
+        if(newState && this.state.selectedNode){
             this.state.selectedNode = null;
             this.state.onNodeSelected(this.state.graph, null);
         }
-        this.setState({autoScroll: newState, autoVScroll: newState});
+        this.setState({autoScroll: newState,autoVScroll:newState});
     }
+
 
     // TODO: Use somebody elses scroll bar.
     onDragStart(e) {
@@ -252,8 +252,7 @@ class GraphTimeline extends React.Component {
         listeners.moveListener = (wmme) => {
             let deltaY = wmme.screenY - this.state.dragStartY;
             let maxScrollPosition = this.state.viewPortHeight - this.state.scrollBarHeight;
-            let inverted = this.state.scrollBarHeight / (this.state.viewPortHeight
-                                                         - this.state.verticalScrollPosition);
+            let inverted = this.state.scrollBarHeight / (this.state.viewPortHeight - this.state.verticalScrollPosition);
 
             let newScrollPosition = this.state.verticalScrollPosition + (deltaY / inverted);
             newScrollPosition = Math.min(newScrollPosition, maxScrollPosition);
@@ -300,6 +299,7 @@ class GraphTimeline extends React.Component {
 
         this.state.timeline.activeNodes.forEach((node, idx) => {
 
+
             let createTs = relativeX(node.created);
 
             if (!this.state.timeline.rankMap.has(node.id())) {
@@ -307,6 +307,7 @@ class GraphTimeline extends React.Component {
                 return;
             }
             let rank = this.state.timeline.rankMap.get(node.id());
+
 
             let styleExtra = [];
             if (node.op === 'invokeFunction') {
@@ -325,34 +326,6 @@ class GraphTimeline extends React.Component {
             }
 
 
-            node.deps().forEach((depnode) => {
-                if (this.isNodeShownByDefault(depnode) && depnode.isCompleted()) {
-                    let depEndPx = relativeX(depnode.completed);
-                    let nodeStartPx = relativeX(node.started);
-
-                    let deprank = this.state.timeline.rankMap.get(depnode.id());
-
-                    let depY = (5 + (deprank * this.state.nodeHeight)) + (this.state.nodeHeight / 2);
-                    let nodeY = (5 + (rank * this.state.nodeHeight)) + (this.state.nodeHeight / 2);
-
-                    nodeElements.push(<div key={node.id() + "_" + depnode.id() + "_h"}
-                                       className={styles.horizLine} style={{
-                        left: depEndPx,
-                        width: (nodeStartPx - depEndPx) + 'px',
-                        top: nodeY
-                    }}>&nbsp;</div>);
-
-
-                    nodeElements.push(<div key={node.id() + "_" + depnode.id() + "_v"}
-                                       className={styles.verticalLine} style={{
-                        left: depEndPx,
-                        height: depY - nodeY + 'px',
-                        top: depY
-                    }}>&nbsp;</div>);
-                    console.log(`${deprank} (${depEndPx}, ${depY}) -> (${nodeStartPx}, ${nodeY})`);
-                }
-            });
-
             switch (node.state) {
                 case 'failed':
                     styleExtra.push(styles.failed);
@@ -365,14 +338,17 @@ class GraphTimeline extends React.Component {
                     break;
             }
 
+
             if (this.state.selectedNode === node) {
                 styleExtra.push(styles.selected);
             }
+
 
             let deps = ""
             if ((node.dependencies.length !== 0)) {
                 deps = "Dependencies: Stage " + node.dependencies.map((n) => n.id());
             }
+
 
             let startPx = relativeX(node.started);
             let widthPx;
@@ -388,8 +364,7 @@ class GraphTimeline extends React.Component {
             let waitingTime = startPx - createTs;
             let waitElem;
             if (waitingTime > 10) {
-                //waitElem = this.createWaitingElem(idx, this.state.nodeHeight, createTs,
-                // waitingTime);
+                //waitElem = this.createWaitingElem(idx, this.state.nodeHeight, createTs, waitingTime);
             }
 
             let runboxStyle = {
@@ -408,24 +383,28 @@ class GraphTimeline extends React.Component {
 
             if (displayNode) {
                 nodeElements.push(<div key={node.id() + "_1"}>
+                        {waitElem}
                         <div className={styles.node + ' ' + styleExtra.join(' ')}
                              style={runboxStyle}
                              onClick={(e) => this.selectNode(node)}
                              data-tooltip={node.op + ": " + node.state + "\n" + deps}
-                        > {node.id()}: {nodeLabel} {durationMs ? (durationMs.toFixed(0) + 'ms')
-                            : ""}</div>
+                        > {node.id()}: {nodeLabel} {durationMs ? (durationMs.toFixed(0) + 'ms') : ""}</div>
                     </div>
                 );
             }
 
         });
 
+
         this.state.timeline.pendingNodes.forEach((node, idx) => {
+
 
             let styleExtra = [styles.pending];
 
             let deps = "";
-
+            if ((node.dependencies.length !== 0)) {
+                deps = "Dependencies: Stage " + node.dependencies.map(n => n.id());
+            }
             if (this.state.selectedNode === node) {
                 styleExtra.push(styles.selected);
             }
@@ -436,19 +415,17 @@ class GraphTimeline extends React.Component {
                 height: '20px',
                 top: '' + ((index + 1) * this.state.nodeHeight) + 'px',
             };
-            let pendElem = (
-                <div key={node.id() + "_1"} className={styles.node + ' ' + styleExtra.join(' ')}
-                     style={pendingboxStyle}
-                     onClick={(e) => this.selectNode(node)}
-                     data-tooltip={node.op + ": " + node.state + "\n" + deps}
-                > {node.id()}:{node.op} </div>);
+            let pendElem = (<div key={node.id() + "_1"} className={styles.node + ' ' + styleExtra.join(' ')}
+                                 style={pendingboxStyle}
+                                 onClick={(e) => this.selectNode(node)}
+                                 data-tooltip={node.op + ": " + node.state + "\n" + deps}
+            > {node.id()}:{node.op} </div>);
             pendingElems.push(pendElem);
         });
 
         let leftPosition;
         if ((relativeX(this.state.maxTimeStamp) < this.state.viewPortWidth)) {
-            leftPosition =
-                {left: relativeX(this.state.maxTimeStamp), height: this.state.graphHeight + 'px'}
+            leftPosition = {left: relativeX(this.state.maxTimeStamp), height: this.state.graphHeight + 'px'}
         } else {
             leftPosition = {visibility: 'hidden'};
         }
@@ -462,18 +439,12 @@ class GraphTimeline extends React.Component {
                      style={{width: this.state.width + 'px', height: this.state.height + 'px'}}>
 
                     <div className={styles.viewport}
-                         style={{
-                             width: this.state.viewPortWidth - 3 + 'px',
-                             height: this.state.viewPortHeight + 'px'
-                         }}>
+                         style={{width: this.state.viewPortWidth - 3 + 'px', height: this.state.viewPortHeight + 'px'}}>
 
                         <div className={styles.scrollingArea} style={{
                             left: -relativeX(this.state.cursorTs) + 'px',
-                            top: -this.state.verticalScrollRatio * Math.max(
-                                0, this.state.graphHeight - this.state.viewPortHeight) + 'px',
-                            width: Math.max(this.state.width, relativeX(this.state.maxTimeStamp)
-                                                              - relativeX(this.state.graph.created))
-                                   + 'px',
+                            top: -this.state.verticalScrollRatio * Math.max(0, this.state.graphHeight - this.state.viewPortHeight) + 'px',
+                            width: Math.max(this.state.width, relativeX(this.state.maxTimeStamp) - relativeX(this.state.graph.created)) + 'px',
                             height: this.state.graphHeight + 'px'
                         }}>
                             <div className={styles.currentLine} style={leftPosition}>
@@ -501,9 +472,7 @@ class GraphTimeline extends React.Component {
                         </div>
                         <div className={styles.verticalScroll} style={{
                             height: this.state.viewPortHeight + 'px',
-                            left: (this.state.viewPortWidth - 25) + 'px',
-                            top: '0px',
-                            position: 'absolute',
+                            left: (this.state.viewPortWidth - 25) + 'px', top: '0px', position: 'absolute',
                             display: this.state.maxScroll === 0 ? "none" : "block"
                         }}>
                             <div className={styles.scrollbox} onMouseDown={this.onDragStart}
@@ -518,11 +487,8 @@ class GraphTimeline extends React.Component {
                         </div>
 
                         <div className={styles.pendingView} style={{
-                            width: this.state.pendingWidth - 3 + 'px',
-                            position: 'absolute',
-                            height: this.state.viewPortHeight + 'px',
-                            left: this.state.viewPortWidth + 'px',
-                            top: '0px'
+                            width: this.state.pendingWidth - 3 + 'px', position: 'absolute',
+                            height: this.state.viewPortHeight + 'px', left: this.state.viewPortWidth + 'px', top: '0px'
                         }}>
 
                             <div>{pendingElems}</div>
