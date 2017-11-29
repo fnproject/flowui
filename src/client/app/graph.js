@@ -3,7 +3,6 @@
  * @param g
  * @param evt
  */
-
 class Node {
     constructor(props) {
         Object.assign(this, props);
@@ -30,21 +29,21 @@ class Node {
         } else {
             if (b.state === 'running') {
                 return this.completed > b.started;
-            }   // both completed
+            } // both completed
             return ((this.started > b.started) && (this.started < b.completed)) ||
                 ((this.completed > b.started) && (this.completed < b.completed));
         }
     }
 
     dependsOn(otherNode) {
-        if(this.depCache.has(otherNode.id())){
+        if (this.depCache.has(otherNode.id())) {
             return this.depCache.get(otherNode.id());
         }
 
-        let val =  this.dependencies.some((n) => {
+        let val = this.dependencies.some((n) => {
             return n === otherNode || n.dependsOn(otherNode)
         });
-        this.depCache.set(otherNode.id(),val);
+        this.depCache.set(otherNode.id(), val);
         return val;
     }
 
@@ -52,13 +51,13 @@ class Node {
         return this.state === 'pending';
     }
 
-    isCompleted(){
-        return this.completed  > 0;
+    isCompleted() {
+        return this.completed > 0;
     }
 
     deps() {
         let deps = Array.from(this.dependencies);
-        if(this.caller!=null && deps.length ===0){
+        if (this.caller != null && deps.length === 0) {
             deps.push(this.caller);
         }
         return deps;
@@ -76,9 +75,9 @@ class Node {
             transitiveDependenciesOfNode.add(dep);
         });
 
-        if(includeCaller && this.caller){
+        if (includeCaller && this.caller) {
             transitiveDependenciesOfNode.add(this.caller);
-            this.caller.transitiveDeps(true).forEach((d)=>transitiveDependenciesOfNode.add(d));
+            this.caller.transitiveDeps(true).forEach((d) => transitiveDependenciesOfNode.add(d));
         }
         return transitiveDependenciesOfNode;
     };
@@ -106,23 +105,49 @@ class GraphTimeline {
 
 }
 
+// : {"result":{"seq":"0","flow_id":"f91b5603-da8d-4506-b20c-ad69d7e8f72b","graph_created":{"flow_id":"f91b5603-da8d-4506-b20c-ad69d7e8f72b","function_id":"test/foo","ts":"2017-11-29T15:19:34.561786578Z"}}}
+
 class Graph {
     constructor(createdEvent) {
 
-        this.graph_id = createdEvent.data.graph_id;
-        this.created = Date.parse(createdEvent.data.ts);
+        this.flow_id = createdEvent.flow_id;
+        this.created = Date.parse(createdEvent.ts);
         this.main_ended = null;
         this.finished = null;
         this.all_events = [];
         this.stage_map = new Map();
-        this.function_id = createdEvent.data.function_id;
+        this.function_id = createdEvent.function_id;
         this.event_map = [];
         this.getNode = this.getNode.bind(this);
         this.getNodes = this.getNodes.bind(this);
     }
 
+    static getEventType(event) {
+        if (event.graph_created) {
+            return 'model.GraphCreatedEvent';
+        } else if (event.stage_added) {
+            return 'model.StageAddedEvent';
+        } else if (event.delay_scheduled) {
+            return 'model.DelayScheduledEvent';
+        } else if (event.faas_invocation_started) {
+            return 'model.FaasInvocationStartedEvent';            
+        } else if (event.faas_invocation_completed) {
+            return 'model.FaasInvocationCompletedEvent';
+        } else if (event.stage_completed) {
+            return 'model.StageCompletedEvent';
+        } else if (event.graph_committed) {
+            return 'model.GraphCommittedEvent';
+        } else if (event.graph_completed) {
+            return 'model.GraphCompletedEvent';
+        } else if (event.stage_composed) {
+            return 'model.StageComposedEvent';
+        } else {
+            return nil;
+        }
+    }
+
     getId() {
-        return this.graphId;
+        return this.flow_id;
     }
 
 
@@ -147,33 +172,33 @@ class Graph {
         }
 
         updateStage = updateStage.bind(this);
-
-        switch (evt.type) {
+        let evtType = Graph.getEventType(evt)
+        console.log(`Processing event of type ${evtType}`)
+        switch (evtType) {
             case 'model.GraphCreatedEvent': {
-                let start = Date.parse(evt.data.ts);
+                let start = Date.parse(evt.ts);
                 this.stage_map.set("main", new Node({
                     state: 'running',
                     stage_id: "main",
                     created: start,
                     started: start,
                     dependencies: [],
-                    function_id: evt.data.function_id,
+                    function_id: evt.function_id,
                     caller: null,
                     op: 'main',
                 }));
             }
                 break;
             case 'model.StageAddedEvent': {
-                const evtData = evt.data;
-                const stage_id = evtData.stage_id;
+                const stage_id = evt.stage_id;
                 let stage = new Node({
                     state: 'pending',
                     stage_id: stage_id,
-                    created: Date.parse(evtData.ts),
-                    op: evtData.op,
-                    code_location: evtData.code_location,
-                    caller: this.getNode(evtData.caller_id || "main"),
-                    dependencies: ((evtData.dependencies || []).map(this.getNode)).map((dep) => {
+                    created: Date.parse(evt.ts),
+                    op: evt.op,
+                    code_location: evt.code_location,
+                    caller: this.getNode(evt.caller_id || "main"),
+                    dependencies: ((evt.dependencies || []).map(this.getNode)).map((dep) => {
                         if (dep.composed_node ) {
                             return dep.composed_node;
                         } else {
@@ -186,38 +211,38 @@ class Graph {
             }
                 break;
             case 'model.DelayScheduledEvent': {
-                updateStage(evt.data.stage_id, (stage) => {
+                updateStage(evt.stage_id, (stage) => {
                     //stage.state = 'running';
-                    //stage.started = Date.parse(evt.data.ts);
+                    //stage.started = Date.parse(evt.ts);
                     return stage;
                 });
 
             }
                 break;
             case 'model.FaasInvocationStartedEvent': {
-                updateStage(evt.data.stage_id, (stage) => {
+                updateStage(evt.stage_id, (stage) => {
                     stage.state = 'running';
-                    stage.started = Date.parse(evt.data.ts);
-                    stage.function_id = evt.data.function_id;
+                    stage.started = Date.parse(evt.ts);
+                    stage.function_id = evt.function_id;
                     return stage;
                 });
 
             }
                 break;
             case 'model.FaasInvocationCompletedEvent': {
-                updateStage(evt.data.stage_id, (stage) => {
-                    stage.call_id = evt.data.call_id;
-                    stage.completed = Date.parse(evt.data.ts);
+                updateStage(evt.stage_id, (stage) => {
+                    stage.call_id = evt.call_id;
+                    stage.completed = Date.parse(evt.ts);
                     return stage;
                 });
 
             }
                 break;
             case 'model.StageCompletedEvent': {
-                updateStage(evt.data.stage_id, (stage) => {
-                    stage.state = evt.data.result.successful ? "successful" : "failed";
+                updateStage(evt.stage_id, (stage) => {
+                    stage.state = evt.result.successful ? "successful" : "failed";
                     if (!stage.completed) {
-                        stage.completed = Date.parse(evt.data.ts);
+                        stage.completed = Date.parse(evt.ts);
                     }
                     if (!stage.started) {
                         stage.started = stage.completed;
@@ -227,22 +252,20 @@ class Graph {
             }
                 break;
             case 'model.GraphCommittedEvent': {
-                const evtData = evt.data;
                 updateStage("main", (stage) => {
-                    stage.completed = Date.parse(evtData.ts);
+                    stage.completed = Date.parse(evt.ts);
                     stage.state = "successful";
                     return stage;
                 });
             }
                 break;
             case 'model.GraphCompletedEvent' : {
-                const evtData = evt.data;
-                this.finished = Date.parse(evtData.ts);
+                this.finished = Date.parse(evt.ts);
             }
                 break;
             case 'model.StageComposedEvent': {
-                let thenComposedNode = this.getNode(evt.data.stage_id);
-                let newNode = this.getNode(evt.data.composed_stage_id);
+                let thenComposedNode = this.getNode(evt.stage_id);
+                let newNode = this.getNode(evt.composed_stage_id);
                 thenComposedNode.composed_node = newNode;
                 console.log(`using ${newNode.id()} (${newNode.op}) in place of ${thenComposedNode.id()} ${thenComposedNode.op}`);
 
@@ -258,14 +281,13 @@ class Graph {
             }
                 break;
             default:
-                console.log("Unrecognised event ", evt.type);
+                console.log("Unrecognised event", evt.type);
 
         }
         if (this.event_map[evt.type]) {
             this.event_map[evt.type].forEach((fn) => fn(evt));
         }
     }
-
 
     On(evt_name, fn) {
         (this.event_map[evt_name] = this.event_map[evt_name] || []).push(fn);
@@ -412,7 +434,7 @@ class Graph {
                         }
                     }
                 }
-                if (!conflict) {                // parent rank is free here
+                if (!conflict) { // parent rank is free here
                     ranks[minRank].set(node.id(), node);
                 } else {
                     let rankMap = new Map();

@@ -45,7 +45,7 @@ class App extends React.Component {
         this.state.controller = new Controller(client, (c) => {
             this.state.controller = c;
             if (!this.state.currentGraphId && c.getKnownGraphs().length > 0 && this.state.loadOnNew) {
-                this.onGraphSelected(c.getKnownGraphs().slice(-1)[0].data.graph_id);
+                this.onGraphSelected(c.getKnownGraphs().slice(-1)[0].flow_id);
             } else {
                 this.setState(this.state);
                 this.loadNodeData();
@@ -178,7 +178,7 @@ class App extends React.Component {
         this.setState({currentNode: node});
         this.watchedNodeState = new Map();
         if ((node !== null)) {
-            console.log(`node ${graph.graph_id}: ${node.stage_id} selected`);
+            console.log(`node ${graph.flow_id}: ${node.stage_id} selected`);
             this.state.nodeLogs = new Map();
             this.state.nodeCalls = new Map();
             this.loadNodeData();
@@ -194,18 +194,18 @@ class App extends React.Component {
     render() {
         let graphListItems = [];
         this.state.controller.getKnownGraphs().forEach((graph) => {
-            let elem = (<div key={graph.data.graph_id}
+            let elem = (<div key={graph.flow_id}
                              style={{
                                  padding: '10px', textAlign: 'center',
                                  borderBottom: '3px double #CCCCCC'
                              }}>
                 <a href={"#" + this.props.location.pathname}
                    onClick={(e) => {
-                       this.onGraphSelected(graph.data.graph_id);
+                       this.onGraphSelected(graph.flow_id);
                        e.stopPropagation();
                        e.nativeEvent.stopImmediatePropagation();
-                   }}>{graph.data.function_id}
-                    <div className={styles.listGraphId}>{graph.data.graph_id}</div>
+                   }}>{graph.function_id}
+                    <div className={styles.listGraphId}>{graph.flow_id}</div>
                 </a>
 
             </div>);

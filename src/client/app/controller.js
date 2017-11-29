@@ -15,42 +15,46 @@ class Controller {
         };
         this.on_changed = onChanged;
         this.debounce_timeout = null;
-
     }
 
 
-    subscribe(graphId) {
-        this.client.subscribe(graphId);
+    subscribe(flowId) {
+        this.client.subscribeGraphStream(flowId);
     }
 
     receiveEvent(event) {
-        switch (event.sub) {
-            case '_all':
-                switch (event.type) {
-                    case 'model.GraphCreatedEvent':
-                        this.known_graphs.add(event);
-                        break;
-                }
-                break;
-            default: {
-                let graph;
-                let graph_id = event.sub;
-                if (event.type === 'model.GraphCreatedEvent') {
-                    graph = new Graph(event);
-                    this.active_graphs.set(graph_id, graph);
-
-                } else {
-                    graph = this.active_graphs.get(graph_id)
-                    if (!graph) {
-                        console.log("Got event for unknown graph ${graphId}")
-                        return;
-                    }
-                }
-                graph.receiveEvent(event)
-            }
-
+        if (event.is_lifecycle) {
+            this.handleLifecycleEvent(event);
+        } else {
+            this.handleGraphEvent(event);
         }
-        this.deBounce(() => this.on_changed(this), 200);
+        this.deBounce(() => this.on_changed(this), 200);        
+    }
+
+    handleGraphEvent(event) {
+        console.log("Processing graph event", event)
+        let graph;
+        let flow_id = event.flow_id;
+
+        if (event.graph_created) {
+            graph = new Graph(event.graph_created);
+            this.active_graphs.set(flow_id, graph);
+            
+        } else {
+            graph = this.active_graphs.get(flow_id) 
+            if (!graph) {
+                console.log(`Got event for unknown graph ${flow_id}`)
+                return;
+            }
+        }
+        graph.receiveEvent(event)                
+    }
+
+    handleLifecycleEvent(event) {
+        console.log("Processing lifecycle event", event)        
+        if (event.graph_created) {
+            this.known_graphs.add(event);
+        }
     }
 
     //debounces the number of updates to the runtime down to  a max of 10x per second
