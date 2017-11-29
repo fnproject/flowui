@@ -24,7 +24,7 @@ class CompleterStreamClient {
 
     subscribeStream(url, isLifecycleStream, callback) {
         console.log("Subscribing to stream on", url);        
-        fetch(url, {method: 'GET'}).then(response => {
+        fetch(url, {method: 'GET', mode: 'no-cors'}).then(response => {
             let reader = response.body.getReader();
 
             let decoder = new TextDecoder('utf-8')
