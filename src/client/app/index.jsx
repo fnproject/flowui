@@ -9,6 +9,7 @@ import {HashRouter as Router, Route, Switch} from 'react-router-dom';
 import MockCompleterClient from './mockcompleterclient.js';
 import CompleterWsClient from './completerclient.js';
 import SpringyView from "./Springy.jsx";
+import CompleterStreamClient from "./completerStreamClient";
 
 require('file-loader?name=[name].[ext]!./index.html');
 
@@ -38,7 +39,7 @@ class App extends React.Component {
         if (props.match.path === '/mock') {
             client = new MockCompleterClient();
         } else {
-            client = new CompleterWsClient();
+            client = new CompleterStreamClient();
         }
 
         this.state.controller = new Controller(client, (c) => {
