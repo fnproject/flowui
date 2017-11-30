@@ -124,23 +124,25 @@ class Graph {
 
     static getEventType(event) {
         if (event.graph_created) {
-            return 'model.GraphCreatedEvent';
+            return 'graph_created';
         } else if (event.stage_added) {
-            return 'model.StageAddedEvent';
+            return 'stage_added';
         } else if (event.delay_scheduled) {
-            return 'model.DelayScheduledEvent';
+            return 'delay_scheduled';
         } else if (event.faas_invocation_started) {
-            return 'model.FaasInvocationStartedEvent';            
+            return 'faas_invocation_started';            
         } else if (event.faas_invocation_completed) {
-            return 'model.FaasInvocationCompletedEvent';
+            return 'faas_invocation_completed';
         } else if (event.stage_completed) {
-            return 'model.StageCompletedEvent';
+            return 'stage_completed';
         } else if (event.graph_committed) {
-            return 'model.GraphCommittedEvent';
+            return 'graph_committed';
+        } else if (event.graph_terminating) {
+            return 'graph_terminating';
         } else if (event.graph_completed) {
-            return 'model.GraphCompletedEvent';
+            return 'graph_completed';
         } else if (event.stage_composed) {
-            return 'model.StageComposedEvent';
+            return 'stage_composed';
         } else {
             return nil;
         }
@@ -173,119 +175,103 @@ class Graph {
 
         updateStage = updateStage.bind(this);
         let evtType = Graph.getEventType(evt)
-        console.log(`Processing event of type ${evtType}`)
-        switch (evtType) {
-            case 'model.GraphCreatedEvent': {
-                let start = Date.parse(evt.ts);
-                this.stage_map.set("main", new Node({
-                    state: 'running',
-                    stage_id: "main",
-                    created: start,
-                    started: start,
-                    dependencies: [],
-                    function_id: evt.function_id,
-                    caller: null,
-                    op: 'main',
-                }));
-            }
-                break;
-            case 'model.StageAddedEvent': {
-                const stage_id = evt.stage_id;
-                let stage = new Node({
-                    state: 'pending',
-                    stage_id: stage_id,
-                    created: Date.parse(evt.ts),
-                    op: evt.op,
-                    code_location: evt.code_location,
-                    caller: this.getNode(evt.caller_id || "main"),
-                    dependencies: ((evt.dependencies || []).map(this.getNode)).map((dep) => {
-                        if (dep.composed_node ) {
-                            return dep.composed_node;
-                        } else {
-                            return dep;
-                        }
-                    })
-                });
-
-                this.stage_map.set(stage_id, stage);
-            }
-                break;
-            case 'model.DelayScheduledEvent': {
-                updateStage(evt.stage_id, (stage) => {
-                    //stage.state = 'running';
-                    //stage.started = Date.parse(evt.ts);
-                    return stage;
-                });
-
-            }
-                break;
-            case 'model.FaasInvocationStartedEvent': {
-                updateStage(evt.stage_id, (stage) => {
-                    stage.state = 'running';
-                    stage.started = Date.parse(evt.ts);
-                    stage.function_id = evt.function_id;
-                    return stage;
-                });
-
-            }
-                break;
-            case 'model.FaasInvocationCompletedEvent': {
-                updateStage(evt.stage_id, (stage) => {
-                    stage.call_id = evt.call_id;
-                    stage.completed = Date.parse(evt.ts);
-                    return stage;
-                });
-
-            }
-                break;
-            case 'model.StageCompletedEvent': {
-                updateStage(evt.stage_id, (stage) => {
-                    stage.state = evt.result.successful ? "successful" : "failed";
-                    if (!stage.completed) {
-                        stage.completed = Date.parse(evt.ts);
+        console.log(`Processing event of type ${evtType}`, evt)
+        if (evt.graph_created) {
+            let start = Date.parse(evt[evtType].ts);
+            this.stage_map.set("main", new Node({
+                state: 'running',
+                stage_id: "main",
+                created: start,
+                started: start,
+                dependencies: [],
+                function_id: evt[evtType].function_id,
+                caller: null,
+                op: 'main',
+            }));
+        } else if (evt.stage_added) {
+            const stage_id = evt[evtType].stage_id;
+            let stage = new Node({
+                state: 'pending',
+                stage_id: stage_id,
+                created: Date.parse(evt[evtType].ts),
+                op: evt[evtType].op,
+                code_location: evt[evtType].code_location,
+                caller: this.getNode(evt[evtType].caller_id || "main"),
+                dependencies: ((evt[evtType].dependencies || []).map(this.getNode)).map((dep) => {
+                    if (dep.composed_node ) {
+                        return dep.composed_node;
+                    } else {
+                        return dep;
                     }
-                    if (!stage.started) {
-                        stage.started = stage.completed;
+                })
+            });
+
+            this.stage_map.set(stage_id, stage);
+        } else if (evt.delay_scheduled) {
+            updateStage(evt[evtType].stage_id, (stage) => {
+                //stage.state = 'running';
+                //stage.started = Date.parse(evt[evtType].ts);
+                return stage;
+            });
+        } else if (evt.faas_invocation_started) {
+            updateStage(evt[evtType].stage_id, (stage) => {
+                stage.state = 'running';
+                stage.started = Date.parse(evt[evtType].ts);
+                stage.function_id = evt[evtType].function_id;
+                return stage;
+            });            
+        } else if (evt.faas_invocation_completed) {
+            updateStage(evt[evtType].stage_id, (stage) => {
+                stage.call_id = evt[evtType].call_id;
+                stage.completed = Date.parse(evt[evtType].ts);
+                return stage;
+            });
+        } else if (evt.stage_completed) {
+            updateStage(evt[evtType].stage_id, (stage) => {
+                stage.state = evt[evtType].result.successful ? "successful" : "failed";
+                if (!stage.completed) {
+                    stage.completed = Date.parse(evt[evtType].ts);
+                }
+                if (!stage.started) {
+                    stage.started = stage.completed;
+                }
+                return stage;
+            });
+        } else if (evt.graph_committed) {
+            updateStage("main", (stage) => {
+                stage.completed = Date.parse(evt[evtType].ts);
+                stage.state = "successful";
+                return stage;
+            });
+        } else if (evt.graph_terminating) {
+            updateStage("main", (stage) => {
+                stage.completed = Date.parse(evt[evtType].ts);
+                stage.state = "terminating";
+                return stage;
+            });    
+        } else if (evt.graph_completed) {
+            this.finished = Date.parse(evt[evtType].ts);
+        } else if (evt.stage_composed) {
+            let thenComposedNode = this.getNode(evt[evtType].stage_id);
+            let newNode = this.getNode(evt[evtType].composed_stage_id);
+            thenComposedNode.composed_node = newNode;
+            console.log(`using ${newNode.id()} (${newNode.op}) in place of ${thenComposedNode.id()} ${thenComposedNode.op}`);
+
+            this.getNodes().forEach((node) => {
+                node.dependencies = node.dependencies.map((dep) => {
+                    if (dep.composed_node) {
+                        return dep.composed_node;
+                    } else {
+                        return dep;
                     }
-                    return stage;
                 });
-            }
-                break;
-            case 'model.GraphCommittedEvent': {
-                updateStage("main", (stage) => {
-                    stage.completed = Date.parse(evt.ts);
-                    stage.state = "successful";
-                    return stage;
-                });
-            }
-                break;
-            case 'model.GraphCompletedEvent' : {
-                this.finished = Date.parse(evt.ts);
-            }
-                break;
-            case 'model.StageComposedEvent': {
-                let thenComposedNode = this.getNode(evt.stage_id);
-                let newNode = this.getNode(evt.composed_stage_id);
-                thenComposedNode.composed_node = newNode;
-                console.log(`using ${newNode.id()} (${newNode.op}) in place of ${thenComposedNode.id()} ${thenComposedNode.op}`);
-
-                this.getNodes().forEach((node) => {
-                    node.dependencies = node.dependencies.map((dep) => {
-                        if (dep.composed_node) {
-                            return dep.composed_node;
-                        } else {
-                            return dep;
-                        }
-                    });
-                });
-            }
-                break;
-            default:
-                console.log("Unrecognised event", evt.type);
-
+            });
+        } else {
+            console.log("Unrecognised event", evtType);
         }
-        if (this.event_map[evt.type]) {
-            this.event_map[evt.type].forEach((fn) => fn(evt));
+
+        if (this.event_map[evtType]) {
+            this.event_map[evtType].forEach((fn) => fn(evt));
         }
     }
 
