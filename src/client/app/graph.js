@@ -105,8 +105,6 @@ class GraphTimeline {
 
 }
 
-// : {"result":{"seq":"0","flow_id":"f91b5603-da8d-4506-b20c-ad69d7e8f72b","graph_created":{"flow_id":"f91b5603-da8d-4506-b20c-ad69d7e8f72b","function_id":"test/foo","ts":"2017-11-29T15:19:34.561786578Z"}}}
-
 class Graph {
     constructor(createdEvent) {
 
