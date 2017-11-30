@@ -28,10 +28,13 @@ class CompleterStreamClient {
     subscribeStream(url, isLifecycleStream, callback) {
         oboe(url)
             .done((data) => {
-                console.log("Processing msg", data);
+                console.log("Received event from stream", data);
                 data.result.is_lifecycle = isLifecycleStream;
                 callback(data.result);
-            });
+            })
+            .fail((error) => {
+                console.error(`Failed to subscribe to stream at ${url}`, error);
+             });;
     }
 
     onChunkedResponseError(err) {
