@@ -2,7 +2,6 @@ import Graph from './graph.js';
 
 //import CompleterWsClient from "./completerclient";
 
-
 class Controller {
 
     constructor(client, onChanged) {
@@ -10,45 +9,49 @@ class Controller {
         this.active_graphs = new Map();
 
         this.client = client;
-        client.receiver = (e) => {
-            this.receiveEvent(e);
-        };
+        this.handleGraphEvent = this.handleGraphEvent.bind(this);
+        this.handleLifecycleEvent = this.handleLifecycleEvent.bind(this);
+        console.log("subscribing to lifecycle");
+        this.lifecycleSub = client.subscribeLifecycleStream(this.handleLifecycleEvent);
+        this.subs = {};
+
         this.on_changed = onChanged;
         this.debounce_timeout = null;
-
     }
 
-
-    subscribe(graphId) {
-        this.client.subscribe(graphId);
+    subscribe(flowId) {
+        console.log("connecting to ",flowId);
+        if (this.subs[flowId]) {
+            return;
+        }
+        this.subs[flowId] = this.client.subscribeGraphStream(flowId, this.handleGraphEvent);
     }
 
-    receiveEvent(event) {
-        switch (event.sub) {
-            case '_all':
-                switch (event.type) {
-                    case 'model.GraphCreatedEvent':
-                        this.known_graphs.add(event);
-                        break;
-                }
-                break;
-            default: {
-                let graph;
-                let graph_id = event.sub;
-                if (event.type === 'model.GraphCreatedEvent') {
-                    graph = new Graph(event);
-                    this.active_graphs.set(graph_id, graph);
+    handleGraphEvent(event) {
+        console.debug("Processing graph event", event)
+        let graph;
+        let flow_id = event.flow_id;
 
-                } else {
-                    graph = this.active_graphs.get(graph_id)
-                    if (!graph) {
-                        console.log("Got event for unknown graph ${graphId}")
-                        return;
-                    }
-                }
-                graph.receiveEvent(event)
+        if (event.graph_created) {
+            graph = new Graph(event.graph_created);
+            this.active_graphs.set(flow_id, graph);
+
+        } else {
+            graph = this.active_graphs.get(flow_id)
+            if (!graph) {
+                console.log(`Got event for unknown graph ${flow_id}`)
+                return;
             }
+        }
+        graph.receiveEvent(event)
+        this.deBounce(() => this.on_changed(this), 200);
 
+    }
+
+    handleLifecycleEvent(event) {
+        console.log("Processing lifecycle event", event)
+        if (event.graph_created) {
+            this.known_graphs.add(event);
         }
         this.deBounce(() => this.on_changed(this), 200);
     }

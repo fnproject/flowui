@@ -20,7 +20,7 @@ docker run   -p3000:3000 -e API_URL=http://$DOCKER_LOCALHOST:8080 -e COMPLETER_B
 
 You need nodejs (tested with 8.5.0)
 
-this assumes that the completer is running on 127.0.0.1:8081 and the corresponding functions server is running on 8081
+this assumes that the completer is running on 127.0.0.1:8081 and the corresponding functions server is running on 8080
 
 ```bash
  npm install 

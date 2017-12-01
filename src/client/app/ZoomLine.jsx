@@ -36,9 +36,11 @@ class ZoomLine extends React.Component {
     }
 
     relativeX(timeStamp) {
-        var minTs = this.state.graph.created;
-        const maxTs = this.state.graph.finished ? this.state.graph.finished : Date.now();
-        let curDurationTs = (maxTs - this.state.graph.created);
+        var minTs = this.state.graph.toBrowserTime(this.state.graph.created);
+        const maxTs = this.state.graph.finished ? this.state.graph.toBrowserTime(this.state.graph.finished): Date.now();
+        let curDurationTs = (maxTs - minTs);
+        timeStamp = this.state.graph.toBrowserTime(timeStamp);
+
         if (curDurationTs < this.state.windowDurationMs) {
             return (timeStamp - minTs) * this.state.width / (this.state.windowDurationMs);
         } else {
@@ -56,8 +58,8 @@ class ZoomLine extends React.Component {
             let deltaX = wmme.screenX - this.state.dragStartX;
             let inverted;
 
-            let minCursorTs = this.state.graph.created;
-            const maxTs = this.state.graph.finished ? this.state.graph.finished : Date.now();
+            let minCursorTs = this.state.graph.toBrowserTime(this.state.graph.created);
+            const maxTs = this.state.graph.finished? this.state.graph.toBrowserTime(this.state.graph.finished) : Date.now();
             const maxCursorTs = maxTs - this.state.windowDurationMs;
             let curDurationTs = (maxTs - minCursorTs);
             if (curDurationTs < this.state.windowDurationMs) {
