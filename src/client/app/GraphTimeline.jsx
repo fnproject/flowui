@@ -285,8 +285,7 @@ class GraphTimeline extends React.Component {
         }
 
         // converts a timestamp to a relative X in the display viewport
-        let relativeX = function (timeStamp) {
-            let relTs = this.state.graph.toBrowserTime(timeStamp);
+        let relativeX = function (relTs) {
             return ((relTs - startTs) * self.state.pxPerMs);
         }.bind(this);
 
@@ -357,7 +356,7 @@ class GraphTimeline extends React.Component {
                 durationMs = node.completed - node.started;
             } else {
                 widthPx = relativeX(Date.now()) - relativeX(node.started);
-                durationMs = Date.now() - node.started;
+                durationMs = graph.toBrowserTime(Date.now()) - node.started;
             }
 
             let waitingTime = startPx - createTs;
@@ -422,6 +421,7 @@ class GraphTimeline extends React.Component {
 
         let leftPosition;
         if ((relativeX(this.state.maxTimeStamp) < this.state.viewPortWidth)) {
+
             leftPosition = {left: relativeX(this.state.maxTimeStamp), height: this.state.graphHeight + 'px'}
         } else {
             leftPosition = {visibility: 'hidden'};

@@ -161,7 +161,10 @@ class Graph {
     }
 
     toBrowserTime(ts){
-        return ts  + this.timeLag;
+        return ts ;
+    }
+    fromBrowserTime(ts){
+        return ts  ;
     }
 
     /**
