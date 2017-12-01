@@ -1,7 +1,5 @@
 #!/usr/bin/env node
-var WebSocket = require('ws');
 var fs = require('fs');
-
 var oboe = require('oboe');
 
 var flowId = process.argv[2];

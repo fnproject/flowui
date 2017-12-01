@@ -111,8 +111,9 @@ class Graph {
         this.flow_id = createdEvent.flow_id;
         this.created = Date.parse(createdEvent.ts);
         this.main_ended = null;
+        this.lastEvent = null;
         this.finished = null;
-        this.all_events = [];
+        this.timeLag = 0;
         this.stage_map = new Map();
         this.function_id = createdEvent.function_id;
         this.event_map = [];
@@ -155,12 +156,23 @@ class Graph {
         return this.finished == null;
     }
 
+    getLastEvent(){
+        return this.lastEvent;
+    }
+
+    toBrowserTime(ts){
+        return ts  + this.timeLag;
+    }
+
     /**
      * pushes an event to the graph structure, updates
      * @param evt
      */
     receiveEvent(evt) {
-        this.all_events.push(evt);
+        let sentTs = Date.parse(evt.sent_ts);
+        this.timeLag = Date.now() - sentTs;
+
+        this.lastEvent = evt;
 
         function updateStage(stage_id, cb) {
             let stage = this.stage_map.get(stage_id);
@@ -176,6 +188,7 @@ class Graph {
         console.log(`Processing event of type ${evtType}`, evt)
         if (evt.graph_created) {
             let start = Date.parse(evt[evtType].ts);
+
             this.stage_map.set("main", new Node({
                 state: 'running',
                 stage_id: "main",

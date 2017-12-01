@@ -7,7 +7,6 @@ import FnClient from './fnclient.js';
 import styles from './index.css'
 import {HashRouter as Router, Route, Switch} from 'react-router-dom';
 import MockCompleterClient from './mockcompleterclient.js';
-import CompleterWsClient from './completerclient.js';
 import SpringyView from "./Springy.jsx";
 import CompleterStreamClient from "./completerStreamClient";
 
@@ -17,7 +16,6 @@ class App extends React.Component {
 
     constructor(props) {
         super(props);
-
 
         this.state = {
             loadOnNew: true,
@@ -35,16 +33,17 @@ class App extends React.Component {
 
         this.state.currentGraphId = null;
 
-        let client;
         if (props.match.path === '/mock') {
-            client = new MockCompleterClient();
+            this.client = new MockCompleterClient();
         } else {
-            client = new CompleterStreamClient();
+            this.client = new CompleterStreamClient();
         }
 
-        this.state.controller = new Controller(client, (c) => {
+        console.log("Creating controller");
+        this.state.controller = new Controller(this.client, (c) => {
             this.state.controller = c;
-            if (!this.state.currentGraphId && c.getKnownGraphs().length > 0 && this.state.loadOnNew) {
+            if (!this.state.currentGraphId && c.getKnownGraphs().length > 0
+                && this.state.loadOnNew) {
                 this.onGraphSelected(c.getKnownGraphs().slice(-1)[0].flow_id);
             } else {
                 this.setState(this.state);
@@ -57,9 +56,12 @@ class App extends React.Component {
 
     }
 
-
     componentDidMount() {
 
+    }
+
+    componentWillUnmount() {
+        this.client.close();
     }
 
     onGraphSelected(graphId) {
@@ -101,13 +103,13 @@ class App extends React.Component {
         } else {
             return (
                 <div>
-                    <SpringyView graph={graph} height='800' width='1024' onNodeSelected={this.onNodeSelected}/>
+                    <SpringyView graph={graph} height='800' width='1024'
+                                 onNodeSelected={this.onNodeSelected}/>
                 </div>
             );
 
         }
     }
-
 
     renderCurrentNode() {
         if (this.state.currentNode == null) {
@@ -123,7 +125,6 @@ class App extends React.Component {
             </div>
         );
     }
-
 
     loadCallLogs(node) {
         console.log("Loading call data for " + node.id());
@@ -158,17 +159,17 @@ class App extends React.Component {
             let deps = currentNode.transitiveDeps(true);
             deps.add(currentNode);
             deps.forEach(node => {
-                    if (!this.state.nodeLogs.has(node)) {
-                        this.state.nodeLogs.set(node, null);
-                    }
-                    let lastState = this.watchedNodeState.get(node.id());
-                    if (!lastState && node.isCompleted()) {
-                        this.watchedNodeState.set(node.id(), true);
-                        if (node.call_id) {
-                            this.loadCallLogs(node);
-                        }
-                    }
-                }
+                             if (!this.state.nodeLogs.has(node)) {
+                                 this.state.nodeLogs.set(node, null);
+                             }
+                             let lastState = this.watchedNodeState.get(node.id());
+                             if (!lastState && node.isCompleted()) {
+                                 this.watchedNodeState.set(node.id(), true);
+                                 if (node.call_id) {
+                                     this.loadCallLogs(node);
+                                 }
+                             }
+                         }
             );
         }
     }

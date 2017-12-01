@@ -1,44 +1,87 @@
 let oboe = require("oboe/dist/oboe-browser.min");
 
-class CompleterStreamClient {
+class Subscription {
+    constructor(baseUrl, callback, resumeSeq) {
+        this.callback = callback;
+        this.baseUrl = baseUrl;
+        this.resmeSeq = resumeSeq;
+        this.lastEvent = -1;
+        this.running = true;
 
-    constructor() {
-        this.connect = this.connect.bind(this);
         this.connect();
-        this.receiver = ()=>{}
     }
 
     connect() {
-        let url = "/completer/v1/stream";
-        var target = this.receiver;
-        this.subscribeStream(url, true, (msg)=>{
-            this.receiver(msg);
-        });
-    }
 
-    subscribeGraphStream(flowId) {
-        let url = `/completer/v1/flows/${flowId}/stream`
-        var target = this.receiver;        
-        this.subscribeStream(url, false, (msg)=>{
-            this.receiver(msg);
-        });
-    }
+        let url = this.baseUrl;
+        if (this.resmeSeq) {
+            url += "?from_seq=" + (this.lastEvent + 1)
+        }
+        console.log("requesting stream ", url);
 
-
-    subscribeStream(url, isLifecycleStream, callback) {
-        oboe(url)
+        this.oboe = oboe(url)
             .done((data) => {
-                console.log("Received event from stream", data);
-                data.result.is_lifecycle = isLifecycleStream;
-                callback(data.result);
+                // console.log("Received event from stream", data);
+
+                if (this.resmeSeq) {
+                    this.lastEvent = data.result.seq;
+                }
+                if (this.running) {
+                    try {
+                        this.callback(data.result);
+                    } catch (error) {
+                        console.error("Failed to call callback. killing stream ");
+                        this.close();
+                    }
+                }
             })
             .fail((error) => {
-                console.error(`Failed to subscribe to stream at ${url}`, error);
-             });;
+                console.error(`Failed to get data from stream stream at ${url}`, error);
+                if (this.running) {
+                    this.oboe.abort();
+                    this.oboe = null;
+
+                    console.log("trying to reconnect");
+
+                    setTimeout(() => {
+                        this.connect()
+                    }, 1000);
+                }
+            });
     }
 
-    onChunkedResponseError(err) {
-        console.error("Error processing chunk", err);
+    close() {
+        if (this.oboe !== null) {
+            this.running = false;
+            this.oboe = null;
+            this.oboe.abort();
+        }
+    }
+}
+
+class CompleterStreamClient {
+    constructor() {
+        this.subscriptions = [];
+    }
+
+    subscribeLifecycleStream(callback) {
+        let url = "/completer/v1/stream";
+        let sub = new Subscription(url, callback, false);
+        this.subscriptions.push(sub);
+        return sub
+    }
+
+    subscribeGraphStream(flowId, callback) {
+        let url = `/completer/v1/flows/${flowId}/stream`;
+
+        let sub = new Subscription(url, callback, true);
+        this.subscriptions.push(sub);
+        return sub
+    }
+
+    close() {
+        console.log("Closing client");
+        this.subscriptions.forEach(s=>s.close());
     }
 
 }
