@@ -356,7 +356,7 @@ class GraphTimeline extends React.Component {
                 durationMs = node.completed - node.started;
             } else {
                 widthPx = relativeX(Date.now()) - relativeX(node.started);
-                durationMs = graph.toBrowserTime(Date.now()) - node.started;
+                durationMs = this.state.graph.toBrowserTime(Date.now()) - node.started;
             }
 
             let waitingTime = startPx - createTs;
