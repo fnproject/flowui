@@ -53,8 +53,8 @@ class Subscription {
     close() {
         if (this.oboe !== null) {
             this.running = false;
-            this.oboe = null;
             this.oboe.abort();
+            this.oboe = null;
         }
     }
 }
