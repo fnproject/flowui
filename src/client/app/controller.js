@@ -32,7 +32,7 @@ class Controller {
     }
 
     handleGraphEvent(event) {
-        console.log("Processing graph event", event)
+        console.log("Processing flow event", event)
         let graph;
         if (!event.flow_id) {
             console.warn("No flow id for event", event);
