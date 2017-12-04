@@ -2,6 +2,7 @@ import Graph from './graph.js';
 
 //import CompleterWsClient from "./completerclient";
 
+
 class Controller {
 
     constructor(client, onChanged) {
@@ -9,51 +10,55 @@ class Controller {
         this.active_graphs = new Map();
 
         this.client = client;
-        this.handleGraphEvent = this.handleGraphEvent.bind(this);
-        this.handleLifecycleEvent = this.handleLifecycleEvent.bind(this);
-        console.log("subscribing to lifecycle");
-        this.lifecycleSub = client.subscribeLifecycleStream(this.handleLifecycleEvent);
-        this.subs = {};
-
+        client.receiver = (e) => {
+            this.receiveEvent(e);
+        };
         this.on_changed = onChanged;
         this.debounce_timeout = null;
     }
 
+
     subscribe(flowId) {
-        console.log("connecting to ",flowId);
-        if (this.subs[flowId]) {
-            return;
+        this.client.subscribeGraphStream(flowId);
+    }
+
+    receiveEvent(event) {
+        if (event.is_lifecycle) {
+            this.handleLifecycleEvent(event);
+        } else {
+            this.handleGraphEvent(event);
         }
-        this.subs[flowId] = this.client.subscribeGraphStream(flowId, this.handleGraphEvent);
+        this.deBounce(() => this.on_changed(this), 200);        
     }
 
     handleGraphEvent(event) {
-        console.debug("Processing graph event", event)
+        console.log("Processing graph event", event)
         let graph;
+        if (!event.flow_id) {
+            console.warn("No flow id for event", event);
+            return;
+        } 
         let flow_id = event.flow_id;
 
         if (event.graph_created) {
             graph = new Graph(event.graph_created);
             this.active_graphs.set(flow_id, graph);
-
+            
         } else {
-            graph = this.active_graphs.get(flow_id)
+            graph = this.active_graphs.get(flow_id) 
             if (!graph) {
-                console.log(`Got event for unknown graph ${flow_id}`)
+                console.warn(`Got event for unknown graph ${flow_id}`)
                 return;
             }
         }
-        graph.receiveEvent(event)
-        this.deBounce(() => this.on_changed(this), 200);
-
+        graph.receiveEvent(event)                
     }
 
     handleLifecycleEvent(event) {
-        console.log("Processing lifecycle event", event)
+        console.log("Processing lifecycle event", event)        
         if (event.graph_created) {
             this.known_graphs.add(event);
         }
-        this.deBounce(() => this.on_changed(this), 200);
     }
 
     //debounces the number of updates to the runtime down to  a max of 10x per second
