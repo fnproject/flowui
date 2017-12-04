@@ -47,7 +47,7 @@ class Controller {
         } else {
             graph = this.active_graphs.get(flow_id) 
             if (!graph) {
-                console.warn(`Got event for unknown graph ${flow_id}`)
+                console.warn(`Got event for unknown flow ${flow_id}`)
                 return;
             }
         }
