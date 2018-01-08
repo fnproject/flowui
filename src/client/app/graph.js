@@ -258,11 +258,7 @@ class Graph {
                 return stage;
             });
         } else if (evt.graph_terminating) {
-            updateStage("main", (stage) => {
-                stage.completed = Date.parse(evt[evtType].ts);
-                stage.state = "terminating";
-                return stage;
-            });    
+            // noop
         } else if (evt.graph_completed) {
             this.finished = Date.parse(evt[evtType].ts);
         } else if (evt.stage_composed) {
