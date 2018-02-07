@@ -45,7 +45,6 @@ var config = {
             '/completer': {
                 target: 'http://localhost:8081/',
                 pathRewrite: {"^/completer": ""},
-                ws:true,
             },
         }
     },
