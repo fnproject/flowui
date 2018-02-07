@@ -1,7 +1,7 @@
-# FnFlow  UI  
+# Fn Flow  UI  
 
 
-This is a demoware visualisation tool for showing what's going on with FnFlow in real time. 
+This is a demo-ware visualisation tool for showing what's going on with FnFlow in real time. 
 
 # Running with docker
 
@@ -13,14 +13,14 @@ export DOCKER_LOCALHOST=$(docker inspect --type container -f '{{.NetworkSettings
 ```
 
 ```bash 
-docker run   -p3000:3000 -e API_URL=http://$DOCKER_LOCALHOST:8080 -e COMPLETER_BASE_URL=http://$DOCKER_LOCALHOST:8081 fnproject/completer:ui
+docker run   -p3000:3000 -e API_URL=http://$DOCKER_LOCALHOST:8080 -e COMPLETER_BASE_URL=http://$DOCKER_LOCALHOST:8081 fnproject/flow:ui
 ```
 
 ## running locally 
 
 You need nodejs (tested with 8.5.0)
 
-this assumes that the completer is running on 127.0.0.1:8081 and the corresponding functions server is running on 8081
+this assumes that the completer is running on 127.0.0.1:8081 and the corresponding functions server is running on 8080
 
 ```bash
  npm install 

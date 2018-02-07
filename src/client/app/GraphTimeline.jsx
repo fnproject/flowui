@@ -16,7 +16,7 @@ class GraphTimeline extends React.Component {
             lastEvent: null,
             selectedNode: null,
             maxTimeStamp: Date.now(),
-            cursorTs: props.graph.created,
+            cursorTs: props.graph.toBrowserTime(props.graph.created),
             intervalTimer: -1,
             autoScroll: props.graph.isLive(),
             autoVScroll: true,
@@ -86,18 +86,18 @@ class GraphTimeline extends React.Component {
 
         if (newGraph) {
             console.log("New graph selected");
-            update.cursorTs = graph.created;
+            update.cursorTs = graph.toBrowserTime(graph.created);
             this.startWatch();
         }
 
 
-        const maxTs = graph.isLive() ? Date.now() : graph.finished;
-        let curDurationTs = (maxTs - graph.created);
+        const maxTs = graph.isLive() ? Date.now() : graph.toBrowserTime(graph.finished);
+        let curDurationTs = (maxTs - graph.toBrowserTime(graph.created));
 
 
         if (this.state.autoScroll){
             if(curDurationTs > (this.state.viewPortWidth / this.state.pxPerMs)) {
-                update.cursorTs = graph.created + (curDurationTs - (this.state.viewPortWidth / this.state.pxPerMs));
+                update.cursorTs = graph.toBrowserTime(graph.created) + (curDurationTs - (this.state.viewPortWidth / this.state.pxPerMs));
             }
             if(this.state.autoVScroll){
                 update.verticalScrollRatio = 1.0;
@@ -106,7 +106,7 @@ class GraphTimeline extends React.Component {
             }
         }else{
             update.cursorTs = Math.min(this.state.cursorTs,maxTs - this.state.viewPortWidth / this.state.pxPerMs);
-            update.cursorTs = Math.max(update.cursorTs,graph.created);
+            update.cursorTs = Math.max(update.cursorTs,graph.toBrowserTime(graph.created));
 
         }
 
@@ -115,14 +115,14 @@ class GraphTimeline extends React.Component {
         if (graph.isLive()) {
             update.maxTimeStamp = Date.now();
         } else {
-            update.maxTimeStamp = graph.finished;
+            update.maxTimeStamp = graph.toBrowserTime(graph.finished);
         }
 
-        let lastGraphEvent = graph.all_events.length > 0 ? graph.all_events[graph.all_events.length - 1] : null;
+        let lastGraphEvent = graph.getLastEvent() ;
 
         let timeline;
         if (this.state.lastEvent !== lastGraphEvent) {
-            console.log("Updating graph");
+            console.debug("Updating graph");
             timeline = update.timeline = graph.createTimeline(this.isNodeShownByDefault);
             update.lastEvent = lastGraphEvent;
         } else {
@@ -277,9 +277,7 @@ class GraphTimeline extends React.Component {
     }
 
     render() {
-        let nodes = this.state.graph.getNodes();
-        //nodes.shift();
-        let startTs = this.state.graph.created;
+        let startTs = this.state.graph.toBrowserTime(this.state.graph.created);
         let self = this;
 
         if (!this.state.timeline) {
@@ -287,9 +285,9 @@ class GraphTimeline extends React.Component {
         }
 
         // converts a timestamp to a relative X in the display viewport
-        let relativeX = function (timeStamp) {
-            return ((timeStamp - startTs) * self.state.pxPerMs);
-        };
+        let relativeX = function (relTs) {
+            return ((relTs - startTs) * self.state.pxPerMs);
+        }.bind(this);
 
         let pendingElems = [(<div key='pending-title'
                                   className={styles.pendingTitle}
@@ -305,7 +303,7 @@ class GraphTimeline extends React.Component {
             let createTs = relativeX(node.created);
 
             if (!this.state.timeline.rankMap.has(node.id())) {
-                console.log("no rank for", node.id());
+                console.debug("no rank for", node.id());
                 return;
             }
             let rank = this.state.timeline.rankMap.get(node.id());
@@ -360,13 +358,12 @@ class GraphTimeline extends React.Component {
                 durationMs = node.completed - node.started;
             } else {
                 widthPx = relativeX(Date.now()) - relativeX(node.started);
-                durationMs = Date.now() - node.started;
+                durationMs = this.state.graph.toBrowserTime(Date.now()) - node.started;
             }
             let costDollar = durationMs * this.props.dollarsPerMs;
             totalCostDollar += costDollar;
 
             let waitingTime = startPx - createTs;
-            let waitElem;
             if (waitingTime > 10) {
                 //waitElem = this.createWaitingElem(idx, this.state.nodeHeight, createTs, waitingTime);
             }
@@ -387,7 +384,6 @@ class GraphTimeline extends React.Component {
 
             if (displayNode) {
                 nodeElements.push(<div key={node.id() + "_1"}>
-                        {waitElem}
                         <div className={styles.node + ' ' + styleExtra.join(' ')}
                              style={runboxStyle}
                              onClick={(e) => this.selectNode(node)}
@@ -429,6 +425,7 @@ class GraphTimeline extends React.Component {
 
         let leftPosition;
         if ((relativeX(this.state.maxTimeStamp) < this.state.viewPortWidth)) {
+
             leftPosition = {left: relativeX(this.state.maxTimeStamp), height: this.state.graphHeight + 'px'}
         } else {
             leftPosition = {visibility: 'hidden'};

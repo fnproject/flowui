@@ -1,45 +1,38 @@
 #!/usr/bin/env node
-
-var WebSocket = require('ws');
 var fs = require('fs');
+var oboe = require('oboe');
 
-var graphId = process.argv[2];
+var flowId = process.argv[2];
 
-if ( !graphId){
-    console.log("Specify a graph iD");
+if ( !flowId){
+    console.log("Specify a flow iD");
     return 1;
 }
-console.log("Getting graphId", graphId);
+console.log("Getting flowId", flowId);
 
-const ws = new WebSocket('ws://localhost:8081/wss');
 var events = {};
 var creates = [];
 
 var eventCount =0;
-
-ws.on('message', function (msgString) {
-    //console.log('got data ',msgString);
-
-    var msg = JSON.parse(msgString);
-    if (msg.sub !== '_all') {
+    
+oboe(`http://localhost:8081/v1/flows/${flowId}/stream`)
+    .done((data) => {
+        console.log("Received event from stream", data.result);
         eventCount++;
-        if(!events[msg.sub]){
-            events[msg.sub] = [msg];
+        if(!events[data.result.flow_id]){
+            events[data.result.flow_id] = [data.result];
+        } else {
+            events[data.result.flow_id].push(data.result);
         }
-        events[msg.sub].push(msg);
-        if(msg.type === "model.GraphCreatedEvent"){
-            const newMsg = JSON.parse(msgString);
-            newMsg.sub = "_all";
-            creates.push(newMsg);
-        }
-    }
-});
 
-ws.on('open', function () {
-    console.log("Connection open  subscribing to ",graphId);
-    console.log("Hit Ctrl+C to save data when you are done");
-    ws.send(JSON.stringify({command: 'subscribe', graph_id: graphId}));
-});
+        if (data.result.graph_created) {
+            creates.push(data.result);
+        }
+
+    })
+    .fail((error) => {
+        events.error("Failed to subscribe to stream", error);
+    });
 
 
 process.on('SIGINT', () => {
