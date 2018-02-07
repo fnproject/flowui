@@ -48,7 +48,7 @@
 
 .causedBy {
     width: 100%;
-    color: #FFF;
+    color: #333;
     font-size: 12pt;
     background-color: white;
     text-align: center;
@@ -79,14 +79,22 @@
     background-image: url('./pending_area.png');
 }
 
-/* WORK ON THIS GREEN */
 .successful {
     background-color: darkgreen;
 }
 
 .failed {
     background-color: lightcoral;
+}
 
+.failed .callDetails {
+    color: #333;
+}
+.failed.logHeader {
+    color: #333;
+}
+.failed .rightHeader {
+    color: #333;
 }
 
 .nodeInfoBox {
