@@ -295,6 +295,8 @@ class GraphTimeline extends React.Component {
 
         let nodeElements = [];
 
+        let totalCostDollar = 0.0;
+
         this.state.timeline.activeNodes.forEach((node, idx) => {
 
 
@@ -358,6 +360,8 @@ class GraphTimeline extends React.Component {
                 widthPx = relativeX(Date.now()) - relativeX(node.started);
                 durationMs = this.state.graph.toBrowserTime(Date.now()) - node.started;
             }
+            let costDollar = durationMs * this.props.dollarsPerMs;
+            totalCostDollar += costDollar;
 
             let waitingTime = startPx - createTs;
             if (waitingTime > 10) {
@@ -384,7 +388,7 @@ class GraphTimeline extends React.Component {
                              style={runboxStyle}
                              onClick={(e) => this.selectNode(node)}
                              data-tooltip={node.op + ": " + node.state + "\n" + deps}
-                        > {node.id()}: {nodeLabel} {durationMs ? (durationMs.toFixed(0) + 'ms') : ""}</div>
+                        > {node.id()}: {nodeLabel} {durationMs ? (durationMs.toFixed(0) + 'ms') : ""}  ${costDollar.toFixed(7)}</div>
                     </div>
                 );
             }
@@ -431,6 +435,7 @@ class GraphTimeline extends React.Component {
             <div ref={(input) => {
                 this.containerElem = input;
             }} style={{width: '100%'}}>
+                <div>Cost for this flow: ${totalCostDollar.toFixed(6)}</div>
 
                 <div className={styles.overview}
                      style={{width: this.state.width + 'px', height: this.state.height + 'px'}}>
