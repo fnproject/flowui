@@ -155,7 +155,7 @@ class NodeDetail extends React.Component {
                 call_total = (<div>Total: {Date.parse(callInfo.completed_at) - Date.parse(callInfo.created_at)}ms</div>)
             }
 
-            if (callInfo.started_at && callInfo.completed_at) {
+            if (callInfo.started_at && callInfo.completed_at && this.props.cost) {
                 call_cost = (
                     <div>Cost: ${((Date.parse(callInfo.completed_at) - Date.parse(callInfo.started_at)) * this.props.dollarsPerMs).toFixed(8)}</div>)
             }

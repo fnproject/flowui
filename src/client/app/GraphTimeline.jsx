@@ -435,7 +435,9 @@ class GraphTimeline extends React.Component {
             <div ref={(input) => {
                 this.containerElem = input;
             }} style={{width: '100%'}}>
-                <div>Cost for this flow: ${totalCostDollar.toFixed(6)}</div>
+                <div style={{
+                    display: this.props.cost ? 'block' : 'none'
+                }}>Cost for this flow: ${totalCostDollar.toFixed(6)}</div>
 
                 <div className={styles.overview}
                      style={{width: this.state.width + 'px', height: this.state.height + 'px'}}>
