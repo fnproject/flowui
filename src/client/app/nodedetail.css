@@ -5,11 +5,13 @@
     min-width: 810px;
     width: 100%;
     padding: 10px;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 .logHeader {
     width: 100%;
-    font-size: 15pt;
+    color: #000;
+    font-size: 17pt;
     padding: 10px 10px 5px 8px;
     border-top-right-radius: 4px;
     border-top-left-radius: 4px;
@@ -26,12 +28,12 @@
 
 .rightHeader {
     float: right;
-    color: #777;
+    color: #333;
 }
 
 .callDetails {
-    font-size: 10pt;
-    color: #777;
+    font-size: 11pt;
+    color: #000;
     padding: 3px 0 3px 25px;
     display: block;
 }
@@ -46,7 +48,7 @@
 
 .causedBy {
     width: 100%;
-    color: #333;
+    color: #000;
     font-size: 12pt;
     background-color: white;
     text-align: center;
@@ -73,8 +75,9 @@
     background-image: url('./pending_area.png');
 }
 
+/* WORK ON THIS GREEN */
 .successful {
-    background-color: lightgreen;
+    background-color: #3caf85;
 }
 
 .failed {
@@ -91,7 +94,7 @@
     font-family: Courier, serif;
     font-size: 10pt;
     color: #CCCCCC;
-    background: #000000;
+    background: #000;
     overflow: auto;
     white-space: pre-wrap;
     z-index: 2;
