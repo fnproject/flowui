@@ -388,7 +388,7 @@ class GraphTimeline extends React.Component {
                              style={runboxStyle}
                              onClick={(e) => this.selectNode(node)}
                              data-tooltip={node.op + ": " + node.state + "\n" + deps}
-                        > {node.id()}: {nodeLabel} {durationMs ? (durationMs.toFixed(0) + 'ms') : ""}  ${costDollar.toFixed(7)}</div>
+                        > {node.id()}: {nodeLabel} {durationMs ? (durationMs.toFixed(0) + 'ms') : ""}  { this.props.cost ? '$' + costDollar.toFixed(7) : ''}</div>
                     </div>
                 );
             }
