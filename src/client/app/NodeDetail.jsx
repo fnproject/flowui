@@ -46,6 +46,7 @@ class NodeDetail extends React.Component {
         let call_queued = "";
         let call_total = "";
         let call_running = "";
+        let call_cost = "";
 
 
         function nodeTitle(node) {
@@ -153,6 +154,11 @@ class NodeDetail extends React.Component {
             if (callInfo.created_at && callInfo.completed_at) {
                 call_total = (<div>Total: {Date.parse(callInfo.completed_at) - Date.parse(callInfo.created_at)}ms</div>)
             }
+
+            if (callInfo.started_at && callInfo.completed_at && this.props.cost) {
+                call_cost = (
+                    <div>Cost: ${((Date.parse(callInfo.completed_at) - Date.parse(callInfo.started_at)) * this.props.dollarsPerMs).toFixed(8)}</div>)
+            }
         }
 
         return (<div className={styles.nodeInfoBox}>
@@ -167,6 +173,7 @@ class NodeDetail extends React.Component {
                     {call_queued}
                     {call_running}
                     {call_total}
+                    {call_cost}
                 </div>
             </div>
         </div>);

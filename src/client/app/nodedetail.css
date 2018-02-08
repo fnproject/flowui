@@ -5,11 +5,13 @@
     min-width: 810px;
     width: 100%;
     padding: 10px;
+    font-family: Arial, Helvetica, sans-serif;
 }
 
 .logHeader {
     width: 100%;
-    font-size: 15pt;
+    color: #FFF;
+    font-size: 17pt;
     padding: 10px 10px 5px 8px;
     border-top-right-radius: 4px;
     border-top-left-radius: 4px;
@@ -26,12 +28,12 @@
 
 .rightHeader {
     float: right;
-    color: #777;
+    color: #CCC;
 }
 
 .callDetails {
     font-size: 10pt;
-    color: #777;
+    color: #DDD;
     padding: 3px 0 3px 25px;
     display: block;
 }
@@ -67,6 +69,10 @@
     background-position: 0px 0px;
     background-repeat: repeat;
     animation: animatedBackground 10s linear infinite;
+    color: #333;
+}
+.running .callDetails {
+    color: #555;
 }
 
 .pending {
@@ -74,12 +80,21 @@
 }
 
 .successful {
-    background-color: lightgreen;
+    background-color: #00a02d;
 }
 
 .failed {
     background-color: lightcoral;
+}
 
+.failed .callDetails {
+    color: #333;
+}
+.failed.logHeader {
+    color: #333;
+}
+.failed .rightHeader {
+    color: #333;
 }
 
 .nodeInfoBox {
@@ -91,7 +106,7 @@
     font-family: Courier, serif;
     font-size: 10pt;
     color: #CCCCCC;
-    background: #000000;
+    background: #000;
     overflow: auto;
     white-space: pre-wrap;
     z-index: 2;

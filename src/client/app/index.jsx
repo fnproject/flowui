@@ -31,6 +31,11 @@ class App extends React.Component {
         this.setMode = this.setMode.bind(this);
         this.loadNodeData = this.loadNodeData.bind(this);
 
+        this.dollarsPerMs = 2.08e-9;
+        const search = props.location.search; 
+        const params = new URLSearchParams(search);
+        this.cost = params.get('cost');
+
         this.state.currentGraphId = null;
 
         if (props.match.path === '/mock') {
@@ -96,7 +101,7 @@ class App extends React.Component {
         if (this.state.mode === 'timeline') {
             return (
                 <div>
-                    <GraphTimeline graph={graph} height='800' onNodeSelected={this.onNodeSelected}/>
+                    <GraphTimeline graph={graph} height='800' onNodeSelected={this.onNodeSelected} dollarsPerMs={this.dollarsPerMs} cost={this.cost}/>
                 </div>
             );
 
@@ -121,7 +126,7 @@ class App extends React.Component {
         return (
             <div>
                 <NodeDetail node={this.state.currentNode} nodeLogs={this.state.nodeLogs}
-                            nodeCalls={this.state.nodeCalls}/>
+                            nodeCalls={this.state.nodeCalls} dollarsPerMs={this.dollarsPerMs} cost={this.cost}/>
             </div>
         );
     }

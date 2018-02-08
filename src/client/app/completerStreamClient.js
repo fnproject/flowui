@@ -15,20 +15,20 @@ class Subscription {
 
         let url = this.baseUrl;
         if (this.resmeSeq) {
-            url += "?from_seq=" + (this.lastEvent + 1)
+            url += "?from_seq=" + (this.lastEvent + 1);
         }
         console.log("requesting stream ", url);
 
-        this.oboe = oboe(url)
-            .done((data) => {
-                // console.log("Received event from stream", data);
+        this.oboe = oboe({'url': url, cached: false})
+            .node('result', (result) => {
+                console.log("Received event from stream", result);
 
                 if (this.resmeSeq) {
-                    this.lastEvent = data.result.seq;
+                    this.lastEvent = result.seq;
                 }
                 if (this.running) {
                     try {
-                        this.callback(data.result);
+                        this.callback(result);
                     } catch (error) {
                         console.error("Failed to call callback. killing stream ");
                         this.close();
@@ -44,7 +44,7 @@ class Subscription {
                     console.log("trying to reconnect");
 
                     setTimeout(() => {
-                        this.connect()
+                        this.connect();
                     }, 1000);
                 }
             });
@@ -68,7 +68,7 @@ class CompleterStreamClient {
         let url = "/completer/v1/stream";
         let sub = new Subscription(url, callback, false);
         this.subscriptions.push(sub);
-        return sub
+        return sub;
     }
 
     subscribeGraphStream(flowId, callback) {
@@ -76,7 +76,7 @@ class CompleterStreamClient {
 
         let sub = new Subscription(url, callback, true);
         this.subscriptions.push(sub);
-        return sub
+        return sub;
     }
 
     close() {
