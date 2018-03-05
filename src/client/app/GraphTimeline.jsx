@@ -1,6 +1,6 @@
 import React from 'react';
 
-import styles from './graphtimeline.css'
+import styles from './graphtimeline.css';
 import ZoomLine from "./ZoomLine.jsx";
 import {Button, ButtonGroup, Glyphicon} from 'react-bootstrap';
 import sizeMe from 'react-sizeme';
@@ -431,23 +431,36 @@ class GraphTimeline extends React.Component {
             leftPosition = {visibility: 'hidden'};
         }
 
+        console.log(this.state);
+        let started = new Date(this.state.graph.created);
+        let finished = new Date(this.state.graph.finished);
+
+        let runtime = 0;
+        if (this.state.graph.finished > 0) {
+            runtime = this.state.graph.finished - this.state.graph.created;
+        } else {
+            runtime = Date.now() - this.state.graph.timeLag - this. state.graph.created;
+        }
+
         return (
+            <div style={{padding: "0 1.5em"}}>
             <div ref={(input) => {
                 this.containerElem = input;
-            }} style={{width: '100%'}}>
-                <div style={{
-                    display: this.props.cost ? 'block' : 'none'
-                }}>Cost for this flow: ${totalCostDollar.toFixed(6)}</div>
+              }} >
 
-                <div className={styles.overview}
-                     style={{width: this.state.width + 'px', height: this.state.height + 'px'}}>
+              <div style={{
+                       display: this.props.cost ? 'block' : 'none'
+                   }}>Cost for this flow: ${totalCostDollar.toFixed(6)}</div>
 
-                    <div className={styles.viewport}
-                         style={{width: this.state.viewPortWidth - 3 + 'px', height: this.state.viewPortHeight + 'px'}}>
+              <div className={styles.overview}
+                   style={{width: this.state.width + 'px', height: this.state.height + 'px'}}>
 
-                        <div className={styles.scrollingArea} style={{
-                            left: -relativeX(this.state.cursorTs) + 'px',
-                            top: -this.state.verticalScrollRatio * Math.max(0, this.state.graphHeight - this.state.viewPortHeight) + 'px',
+                <div className={styles.viewport}
+                     style={{width: this.state.viewPortWidth - 3 + 'px', height: this.state.viewPortHeight + 'px'}}>
+
+                  <div className={styles.scrollingArea} style={{
+                           left: -relativeX(this.state.cursorTs) + 'px',
+                           top: -this.state.verticalScrollRatio * Math.max(0, this.state.graphHeight - this.state.viewPortHeight) + 'px',
                             width: Math.max(this.state.width, relativeX(this.state.maxTimeStamp) - relativeX(this.state.graph.created)) + 'px',
                             height: this.state.graphHeight + 'px'
                         }}>
@@ -511,8 +524,8 @@ class GraphTimeline extends React.Component {
 
 
                 </div>
-
             </div>
+</div>
         );
     }
 }

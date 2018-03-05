@@ -6,19 +6,18 @@ import {Glyphicon} from 'react-bootstrap';
 class NodeDetail extends React.Component {
 
     constructor(props) {
-        super(props)
+        super(props);
         //console.log(props);
 
         this.state = {
             node: props.node,
             nodeLogs: props.nodeLogs || new Map(),
-            nodeCalls: props.nodeCalls || new Map(),
+            nodeCalls: props.nodeCalls || new Map()
         };
 
     }
 
     componentWillReceiveProps(props) {
-        // console.log("new props",props);
         this.setState(props);
     }
 
@@ -47,11 +46,11 @@ class NodeDetail extends React.Component {
         let call_total = "";
         let call_running = "";
         let call_cost = "";
-
+        let total_viz = "";
 
         function nodeTitle(node) {
             if (node.op === 'main') {
-                return node.function_id + " (main call)"
+                return node.function_id;
             } else if (node.op === 'invokeFunction') {
                 return node.function_id;
             } else {
@@ -79,59 +78,106 @@ class NodeDetail extends React.Component {
         sortNodes = sortNodes.reverse();
         let prevNode;
 
+        let badgeStyle = [];
+        let icon = "";
+        let stageText = "";
+
+        switch (this.state.node.state) {
+        case 'running':
+            badgeStyle = styles.running;
+            icon = "retweet";
+            stageText = "Running";
+            break;
+        case 'pending':
+            badgeStyle = styles.pending;
+            icon = "clock";
+            stageText = "Pending";
+            break;
+        case 'successful':
+            badgeStyle = styles.successful;
+            icon = "ok";
+            stageText = "Complete";
+            break;
+        case 'failed':
+            badgeStyle = styles.failed;
+            icon = "remove";
+            stageText = "Failed";
+            break;
+        }
+
+        fullLogs.push((
+            <div key={0} className={styles.logNode + " " + styles.mainNode}>
+              <div className={styles.logNodeInner}>
+                <div key={0 + '-header'} className="">
+                  <div className={styles.node}>
+                    <div className={`${styles.chain} ${styles.chainSpace}`}><Glyphicon glyph={icon}/></div>
+                    <div className={styles.chainSpace}>Stage {stageText}</div>
+                  </div>
+                </div>
+              </div>
+            </div>));
+
         sortNodes.forEach((node, idx) => {
-                let logs = this.state.nodeLogs.get(node);
-                let badgeStyle = [];
-                let icon = "";
-                switch (node.state) {
-                    case 'running':
-                        badgeStyle = styles.running;
-                        icon = "retweet";
-                        break;
-                    case 'pending':
-                        badgeStyle = styles.pending;
-                        icon = "clock";
-                        break;
-                    case 'successful':
-                        badgeStyle = styles.successful;
-                        icon = "ok";
-                        break;
-                    case 'failed':
-                        badgeStyle = styles.failed;
-                        icon = "remove";
-                        break;
-                }
+            let selected;
 
-                let title = nodeTitle(node);
-                let currentNode = [];
-                let outerTitle = "";
-                if (idx !== 0) {
-                    outerTitle = (<div className={styles.causedBy}>
-                        {prevNode && (prevNode.caller === node) ? "created by" : "caused by"}</div>);
-                }
-
-                currentNode.push(
-                    (<div key={node.id() + '-header'} className={[styles.logHeader, badgeStyle].join(" ")}>
-                        <div className={styles.rightHeader}>{node.started ? this.formatTime(node.started) : "pending"}</div>
-                        <Glyphicon glyph={icon}/> {title} 
-                        <div key={node.id() + '-calldetails'} className={styles.callDetails}>
-                            <div key={node.id() + '-callid'} className={styles.callId}>{node.call_id ? "Call ID: " + node.call_id : ""}</div>
-                            <div key={node.id() + '-codeloc'} className={styles.codeLocation}>Code Location: {node.code_location}</div>
-                        </div>
-                    </div>));
-
-                if (logs) {
-                    currentNode.push(<div key={node.id() + '-log'} className={styles.logEntry}>{logs}</div>);
-                }
-                fullLogs.push((<div key={node.id()} className={styles.logNode + (idx === 0 ? " " + styles.mainNode : "")}>
-                    {outerTitle}
-                    <div className={styles.logNodeInner}>
-                        {currentNode}
-                    </div>
-                </div>));
-                prevNode = node;
+            if (idx === 0 ) {
+                selected = styles.nodeSelected;
+            } else {
+                selected = "";
             }
-        );
+            let logs = this.state.nodeLogs.get(node);
+            let badgeStyle = [];
+            let icon = "";
+            switch (node.state) {
+            case 'running':
+                badgeStyle = styles.running;
+                icon = "retweet";
+                break;
+            case 'pending':
+                badgeStyle = styles.pending;
+                icon = "clock";
+                break;
+            case 'successful':
+                badgeStyle = styles.successful;
+                icon = "ok";
+                break;
+            case 'failed':
+                badgeStyle = styles.failed;
+                icon = "remove";
+                break;
+            }
+
+            let title = nodeTitle(node);
+            let currentNode = [];
+            let outerTitle = "";
+
+            let timeLapsed = 0;
+            if (idx === sortNodes.length - 1) {
+                timeLapsed =  sortNodes[idx - 1].started - node.started;
+            } else {
+                timeLapsed = node.completed - node.started;
+            }
+            currentNode.push(
+                (<div key={node.id() + '-header'} className="">
+                 <div className={styles.link}>{timeLapsed}ms</div>
+                 <div className={`${styles.node}`}>
+                 <div className={`${styles.chain} ${styles.chainSpace} ${selected}`}><Glyphicon glyph={icon}/></div>
+                 <div className={styles.chainSpace}>{title}</div>
+                 </div>
+                 </div>));
+
+            if (logs) {
+                currentNode.push(<div key={node.id() + '-log'} className={styles.logEntry}>{logs}</div>);
+            }
+            fullLogs.push((<div key={node.id()} className={styles.logNode + (idx === 0 ? " " + styles.mainNode : "")}>
+                           {outerTitle}
+                           <div className={styles.logNodeInner}>
+                           {currentNode}
+                           </div>
+                           </div>));
+            prevNode = node;
+        }
+                         );
 
 
         if (this.state.node.started == null) {
@@ -140,44 +186,52 @@ class NodeDetail extends React.Component {
             triggered = "Triggered: " + this.formatTime(this.state.node.started);
         }
 
-        let callInfo = this.state.nodeCalls.get(this.state.node);
 
-        if (callInfo) {
-            if (callInfo.created_at && callInfo.started_at) {
-                call_queued = (<div>Queued: {Date.parse(callInfo.started_at) - Date.parse(callInfo.created_at)}ms</div>)
-            }
-            if (callInfo.started_at && callInfo.completed_at) {
-                call_running = (
-                    <div>Running: {Date.parse(callInfo.completed_at) - Date.parse(callInfo.started_at)}ms</div>)
-            }
-
-            if (callInfo.created_at && callInfo.completed_at) {
-                call_total = (<div>Total: {Date.parse(callInfo.completed_at) - Date.parse(callInfo.created_at)}ms</div>)
-            }
-
-            if (callInfo.started_at && callInfo.completed_at && this.props.cost) {
-                call_cost = (
-                    <div>Cost: ${((Date.parse(callInfo.completed_at) - Date.parse(callInfo.started_at)) * this.props.dollarsPerMs).toFixed(8)}</div>)
-            }
+        if (this.state.node.created && this.state.node.started) {
+            call_queued = this.state.node.started - this.state.node.created;
+        }
+        if (this.state.node.started && this.state.node.completed) {
+            call_running = this.state.node.completed - this.state.node.started;
         }
 
-        return (<div className={styles.nodeInfoBox}>
-            <h3>Stage details</h3>
-            <div style={{display: 'flex'}}>
-                <div className={styles.logArea}>
-                    {fullLogs}
-                </div>
-                <div className={styles.nodeInfo} style={{display: 'block'}}>
-                    Created: {this.formatTime(this.state.node.created)}<br/>
-                    {triggered}<br/>
-                    {call_queued}
-                    {call_running}
-                    {call_total}
-                    {call_cost}
-                </div>
-            </div>
-        </div>);
+        if (this.state.node.created && this.state.node.completed) {
+            call_total = this.state.node.completed - this.state.node.created;
+        }
 
+        if (call_total > call_running) {
+            total_viz = (
+                <div>
+                  <div className={styles.lines}></div>
+                  <div className={styles.middleTick}></div>
+                  <div className={styles.total}>{call_total}ms</div>
+                </div>
+            );
+        }
+
+
+        return (
+            <div>
+              <h3 style={{"padding-left": "1em"}}>Stage {this.state.node.stage_id === "main" ? "0" : this.state.node.stage_id}. {this.state.node.op}</h3>
+              <div className={styles.panels}>
+                <div className="panel panel-default">
+                  <div style={{"padding-left": "2em"}} className="panel-body">
+                    {fullLogs}
+                  </div>
+                </div>
+
+                <div className="panel panel-default" style={{"border-left": "1px solid lightgrey"}}>
+                  <div className="panel-body">
+                    <div className="detail">
+                      <h4>{triggered}</h4>
+                      <h4>Call Id: {this.state.node.stage_id}</h4>
+                      <h4>Code Location: {this.state.node.code_location}</h4>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </div>
+        );
     }
 }
 

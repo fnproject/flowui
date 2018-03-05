@@ -4,7 +4,7 @@ import {render} from 'react-dom';
 import Controller from './controller.js';
 import GraphTimeline from './GraphTimeline.jsx';
 import FnClient from './fnclient.js';
-import styles from './index.css'
+import styles from './index.css';
 import {HashRouter as Router, Route, Switch} from 'react-router-dom';
 import MockCompleterClient from './mockcompleterclient.js';
 import SpringyView from "./Springy.jsx";
@@ -32,7 +32,7 @@ class App extends React.Component {
         this.loadNodeData = this.loadNodeData.bind(this);
 
         this.dollarsPerMs = 2.08e-9;
-        const search = props.location.search; 
+        const search = props.location.search;
         const params = new URLSearchParams(search);
         this.cost = params.get('cost');
 
@@ -44,7 +44,6 @@ class App extends React.Component {
             this.client = new CompleterStreamClient();
         }
 
-        console.log("Creating controller");
         this.state.controller = new Controller(this.client, (c) => {
             this.state.controller = c;
             if (!this.state.currentGraphId && c.getKnownGraphs().length > 0
@@ -70,7 +69,6 @@ class App extends React.Component {
     }
 
     onGraphSelected(graphId) {
-        console.log(`selected graph ${graphId}`);
         this.state.currentGraphId = graphId;
         this.state.controller.subscribe(graphId);
         this.state.currentNode = null;
@@ -118,21 +116,17 @@ class App extends React.Component {
 
     renderCurrentNode() {
         if (this.state.currentNode == null) {
-            return (
-                <div></div>
-            );
+            return(<div></div>);
         }
 
         return (
-            <div>
-                <NodeDetail node={this.state.currentNode} nodeLogs={this.state.nodeLogs}
-                            nodeCalls={this.state.nodeCalls} dollarsPerMs={this.dollarsPerMs} cost={this.cost}/>
-            </div>
+            <NodeDetail node={this.state.currentNode} nodeLogs={this.state.nodeLogs}
+                        nodeCalls={this.state.nodeCalls} dollarsPerMs={this.dollarsPerMs} cost={this.cost}/>
+
         );
     }
 
     loadCallLogs(node) {
-        console.log("Loading call data for " + node.id());
         let index = node.function_id.indexOf("/");
         let appId = node.function_id.substring(0, index);
         this.state.fnclient.loadLogs(appId, node.call_id)
@@ -199,39 +193,33 @@ class App extends React.Component {
 // Please note this currently only works for the first graph you create
     render() {
         let graphListItems = [];
-        this.state.controller.getKnownGraphs().forEach((graph) => {
-            let elem = (<div key={graph.flow_id}
-                             style={{
-                                 padding: '10px', textAlign: 'center',
-                                 borderBottom: '3px double #CCCCCC'
-                             }}>
-                <a href={"#" + this.props.location.pathname}
-                   onClick={(e) => {
-                       this.onGraphSelected(graph.flow_id);
-                       e.stopPropagation();
-                       e.nativeEvent.stopImmediatePropagation();
-                   }}>{graph.function_id}
-                    <div className={styles.listGraphId}>{graph.flow_id}</div>
-                </a>
 
-            </div>);
+        this.state.controller.getKnownGraphs().forEach((graph, index) => {
+            const created = new Date(graph.graph_created.ts);
+            let elem = (
+                <li role="presentation" key={graph.flow_id} className={this.state.currentGraphId == graph.flow_id ? "active" : ""}>
+                  <a href={"#" + this.props.location.pathname}
+                     onClick={(e) => {
+                         this.onGraphSelected(graph.flow_id);
+                         e.stopPropagation();
+                         e.nativeEvent.stopImmediatePropagation();
+                    }}>
+                    {graph.graph_created.function_id.split('/')[1]} <span className={styles.badge}>{created.toLocaleTimeString()}</span>
+                  </a>
+                </li>);
             graphListItems.push(elem);
         });
 
         return (
-            <div>
-                <div className={styles.graphlist}>
+            <div className={`row ${styles.dark}`}>
+              <div className={`col-sm-2 nav nav-pills nav-stacked ${styles.master}`}>
+                <h2 className={styles.navHeader}>Flows <span>{graphListItems.length}</span></h2>
                     {graphListItems}
-                </div>
-                <div className={styles.content}>
-
-                    <div>
-                        {this.renderCurrentGraph()}
-                    </div>
-                    <div>
-                        {this.renderCurrentNode()}
-                    </div>
-                </div>
+              </div>
+              <div className={`col-sm-10 ${styles.detail}`}>
+                  {this.renderCurrentGraph()}
+                  {this.renderCurrentNode()}
+              </div>
             </div>
         );
     }

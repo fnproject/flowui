@@ -1,3 +1,32 @@
+.timings {
+  display: flex;
+}
+
+.timings > * {
+  padding-right: 1em;
+}
+
+.panels {
+  display: flex;
+  justify-content: space-evently;
+}
+
+.panels > * {
+  width: 50%;
+  background-color: rgb(242, 246, 249);
+  border-radius: 0px;
+}
+
+.centred {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+.vizContainer {
+  padding: 0 1.5em;
+}
 
 .scrollingArea {
     position: relative;

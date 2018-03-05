@@ -1,23 +1,19 @@
-
-
-
-.content {
-    position:relative;
-    left:200px;
-    width: calc(100% - 200px);
-
+.master {
+  color: WhiteSmoke;
 }
 
-.graphlist {
-    position:absolute;
-    height:100%;
-    top:0px;
-    left:0px;
-    background-color:lightgray;
-    width:200px;
-    padding:10px;
+.navHeader {
+  display: flex;
+  justify-content: space-between;
+  font-size: 1.25em;
+  margin-left: 0;
+  padding: 0 15px;
 }
 
-.listGraphId{
-    font-size: 9pt;
+.detail {
+  background-color: WhiteSmoke;
+}
+
+.dark {
+  background-color: #333;
 }
