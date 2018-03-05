@@ -223,7 +223,7 @@ class NodeDetail extends React.Component {
                   <div className="panel-body">
                     <div className="detail">
                       <h4>{triggered}</h4>
-                      <h4>Call Id: {this.state.node.stage_id}</h4>
+                      <h4>Call Id: {this.state.node.call_id}</h4>
                       <h4>Code Location: {this.state.node.code_location}</h4>
                     </div>
                   </div>
