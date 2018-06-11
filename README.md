@@ -9,7 +9,7 @@ Assuming you are already running fn server on port 8080 and completer on port 80
 
 Grab the internal docker network IP 
 ```bash
-export DOCKER_LOCALHOST=$(docker inspect --type container -f '{{.NetworkSettings.Gateway}}' functions)
+export DOCKER_LOCALHOST=$(docker inspect --type container -f '{{.NetworkSettings.Gateway}}' fnserver)
 ```
 
 ```bash 
