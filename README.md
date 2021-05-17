@@ -1,5 +1,6 @@
 # Fn Flow  UI  
 
+*Fn Flow is no longer maintained or supported* 
 
 This is a demo-ware visualisation tool for showing what's going on with FnFlow in real time. 
 
